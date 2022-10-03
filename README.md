@@ -1,9 +1,17 @@
 # openshift etcd-tools
 
-## etcd.sh script
+## etcd-mg.sh
 
-ETCD script will make collect info from ETCD pods, make little summary and search for errors/issues and explains what are expected values.
+ETCD script will make collect info from MUST-GATHER, make little summary and search for errors/issues and explains what are expected values.
+To use it, run
 
+> ./etcd-mg.sh <full path to MUST-GATHER>
+
+or if you're missing clusterversion in your logs, here is exa
+
+> ./etcd-mg.sh <full path to MUST-GATHER> false 4.10     
+
+PS: false parameter is to disable gnuplot use
 
 ## fio_suite
 
