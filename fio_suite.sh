@@ -1,8 +1,11 @@
 #!/bin/bash
 
+STAMP=$(date +%Y-%m-%d_%H-%M-%S)
+
 echo -e "FIO SUITE version 0.1.27"
 echo -e " "
 echo -e "WARNING: this test can run for several minutes without any progress! Please wait until it finish!"
+echo -e "START: $STAMP"
 echo -e " "
 
 cd /test

@@ -1,5 +1,7 @@
 #!/bin/bash
 
+STAMP=$(date +%Y-%m-%d_%H-%M-%S)
+
 case "$1" in
   etcd)
     ./etcd-mg.sh $2 $3
