@@ -13,6 +13,12 @@ or if you're missing clusterversion in your logs, here is exa
 
 PS: false parameter is to disable gnuplot use
 
+## must-gather-log_merger.sh
+
+will combine logs from ETCD, haproxy, router, apiserver into one timeline printing only errors/warnings.
+
+> ./must-gather-log_merger.sh <full path to MUST-GATHER>
+
 ## fio_suite
 
 fio_suite is benchmark tool which runs several fio tests to see how IOPS change under different load.
