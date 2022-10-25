@@ -4,13 +4,10 @@ FROM registry.access.redhat.com/ubi9:9.0.0-1640
 RUN dnf install fio util-linux python-pip wget plotutils -y && dnf clean all -y
 
 WORKDIR /
-COPY etcd-mg.sh /
-COPY fio_suite.sh /
-COPY must-gather-log_merger.sh /
+COPY . /usr/local/bin/
 
-COPY runner.sh /usr/local/bin/
-RUN chmod +x /fio_suite.sh
-RUN chmod +x /etcd-mg.sh
+RUN chmod +x /usr/local/bin/fio_suite.sh
+RUN chmod +x /usr/local/bin/etcd-mg.sh
 RUN chmod +x /usr/local/bin/runner.sh
 RUN chmod +x /usr/local/bin/must-gather-log_merger.sh
 CMD ["/usr/local/bin/runner.sh"]
