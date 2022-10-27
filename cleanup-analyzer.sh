@@ -46,16 +46,19 @@ eval set -- "$PARAMS"
 #---------------------------------------------------------------------------------
 
 
+
+
+#imagestreams referencing images
+oc get imagestream -A -o jsonpath="{..dockerImageReference}" | tr -s '[[:space:]]' '\n' |grep -v 'openshift-release-dev' | sort | uniq > $OUTPUT_PATH/is_images.log
+oc get is -A > $OUTPUT_PATH/is.log
+
+echo -e "IMAGESTREAM: there is $(cat $OUTPUT_PATH/is_images.log|grep -v 'openshift-release-dev'|wc -l) images referenced by Imagestreams."
+echo -e "..."
 #images used by pods
 oc get pods -A -o jsonpath="{..image}" | tr -s '[[:space:]]' '\n' | sort | uniq  > $OUTPUT_PATH/pod_images.log
 echo -e "PODS: there is $(cat $OUTPUT_PATH/pod_images.log|grep -v 'openshift-release-dev'|wc -l) images referenced by pods."
 
-#imagestreams referencing images
-oc get imagestream -A -o jsonpath="{..dockerImageReference}" | tr -s '[[:space:]]' '\n' | sort | uniq > $OUTPUT_PATH/is_images.log
-oc get is -A > $OUTPUT_PATH/is.log
-
-echo -e "IMAGESTREAM: there is $(cat $OUTPUT_PATH/is_images.log|grep -v 'openshift-release-dev'|wc -l) images referenced by Imagestreams."
-
+#replicasets
 
 # oc get replicasets -A |grep  -E '0{1}\s+0{1}\s+0{1}'|wc -l
 oc get replicasets -A |grep  -E '0{1}\s+0{1}\s+0{1}'| awk '{print "-n " $1, $2}'|sort|uniq > $OUTPUT_PATH/replicasets.log
