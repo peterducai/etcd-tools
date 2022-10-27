@@ -1,6 +1,13 @@
 #/bin/bash
 
-STAMP="$(echo $stamp|tr _ ' '|xargs -0 date -d)"
+STAMP=$(date +%Y-%m-%d_%H-%M-%S)
+ETCD_NS='openshift-etcd'
+MUST_PATH=$1
+ORIG_PATH=$(pwd)
+OUTPUT_PATH=$ORIG_PATH/DATA
+
+rm -rf $OUTPUT_PATH
+mkdir -p $OUTPUT_PATH
 
 MASTERS=$(oc get nodes |grep master|cut -d ' ' -f1)
 ETCD=( $(oc --as system:admin -n openshift-etcd get -l k8s-app=etcd pods -o name | tr -s '\n' ' ' ) )
@@ -80,7 +87,7 @@ echo -e ""
 echo -e ""
 echo -e "[NUMBER OF OBJECTS IN ETCD]"
 echo -e ""
-oc exec ${ETCD[0]} -c etcdctl -n openshift-etcd -- etcdctl get / --prefix --keys-only | sed '/^$/d' | cut -d/ -f3 | sort | uniq -c | sort -rn|head -14
+oc exec ${ETCD[0]} -c etcdctl -n openshift-etcd -- etcdctl get / --prefix --keys-only | sed '/^$/d' | cut -d/ -f3 | sort | uniq -c | sort -rn
 echo -e ""
 
 echo -e "[BIGGEST CONSUMERS]"

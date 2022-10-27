@@ -8,6 +8,7 @@ COPY . /usr/local/bin/
 
 RUN chmod +x /usr/local/bin/fio_suite.sh
 RUN chmod +x /usr/local/bin/etcd-mg.sh
+RUN chmod +x /usr/local/bin/etcd-analyzer.sh
 RUN chmod +x /usr/local/bin/runner.sh
 RUN chmod +x /usr/local/bin/must-gather-log_merger.sh
 CMD ["/usr/local/bin/runner.sh"]
