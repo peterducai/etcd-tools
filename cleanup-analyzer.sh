@@ -55,7 +55,7 @@ oc get is -A > $OUTPUT_PATH/is.log
 echo -e "IMAGESTREAM: there is $(cat $OUTPUT_PATH/is_images.log|grep -v 'openshift-release-dev'|wc -l) images referenced by Imagestreams."
 echo -e "..."
 #images used by pods
-oc get pods -A -o jsonpath="{..image}" | tr -s '[[:space:]]' '\n' | sort | uniq  > $OUTPUT_PATH/pod_images.log
+oc get pods -A -o jsonpath="{..image}" | tr -s '[[:space:]]' '\n'|grep -v 'openshift-release-dev' | sort | uniq  > $OUTPUT_PATH/pod_images.log
 echo -e "PODS: there is $(cat $OUTPUT_PATH/pod_images.log|grep -v 'openshift-release-dev'|wc -l) images referenced by pods."
 
 #replicasets
@@ -90,3 +90,12 @@ echo -e "DEPLOYMENT: there is $(cat $OUTPUT_PATH/depimage.log|sort|uniq|grep -v 
 
 
 # oc get is -A | awk '{print $2}'
+
+
+# Print images not used by any pod
+
+#awk 'NR == FNR{ a[$0] = 1;next } !a[$0]' pod_images.log is_images.log
+
+# Print images not used by any Deployment
+
+#awk 'NR == FNR{ a[$0] = 1;next } !a[$0]' deploy.log is_images.log
