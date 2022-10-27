@@ -26,8 +26,11 @@ oc describe deployment alpine -n foo|grep Image | awk '{print $2}'
 
 
 oc get deployment -A|awk '{print $2" -n "$1}'|tail -n +2 > deployment.log
-while IFS= read -r line; do oc describe deployment $line |grep Image | awk '{print $2}'; done < deployment.log
-while IFS= read -r line; do oc describe deployment $line |grep Image | awk '{print $2}'; done < deployment.log |wc -l
+# while IFS= read -r line; do oc describe deployment $line |grep Image | awk '{print $2}'; done < deployment.log
+# while IFS= read -r line; do oc describe deployment $line |grep Image | awk '{print $2}'; done < deployment.log |wc -l
+
+while IFS= read -r line; do oc describe deployment $line |grep Image | awk '{print $2}'; done < deployment.log > depimage.log
+sort depimage.log |uniq|wc -l
 
 
 
