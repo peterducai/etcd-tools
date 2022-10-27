@@ -330,7 +330,7 @@ overload_check() {
     echo -e ""
     echo -e "[OVERLOADED MESSAGES]"
     echo -e ""
-    for member in $(ls |grep -v "revision"|grep -v "quorum"); do
+    for member in $(ls |grep -v "revision"|grep -v "quorum"|grep -v "guard"); do
       etcd_overload $member
     done
     echo -e "Found together $OVRL 'server is likely overloaded' messages."
@@ -350,7 +350,7 @@ tooklong_check() {
     echo -e ""
     echo -e "[TOOK TOO LONG MESSAGES]"
     echo -e ""
-    for member in $(ls |grep -v "revision"|grep -v "quorum"); do
+    for member in $(ls |grep -v "revision"|grep -v "quorum"|grep -v "guard"); do
       etcd_took_too_long $member
     done
     echo -e ""
@@ -376,7 +376,7 @@ ntp_solution() {
 
 ntp_check() {
     echo -e "[NTP MESSAGES]"
-    for member in $(ls |grep -v "revision"|grep -v "quorum"); do
+    for member in $(ls |grep -v "revision"|grep -v "quorum"|grep -v "guard"); do
       etcd_ntp $member
     done
     echo -e ""
@@ -399,7 +399,7 @@ heart_solution() {
 
 heart_check() {
     # echo -e ""
-    for member in $(ls |grep -v "revision"|grep -v "quorum"); do
+    for member in $(ls |grep -v "revision"|grep -v "quorum"|grep -v "guard"); do
       etcd_heart $member
     done
     echo -e ""    
@@ -422,7 +422,7 @@ space_solution() {
 
 space_check() {
     echo -e "[SPACE EXCEEDED MESSAGES]"
-    for member in $(ls |grep -v "revision"|grep -v "quorum"); do
+    for member in $(ls |grep -v "revision"|grep -v "quorum"|grep -v "guard"); do
       etcd_space $member
     done
     echo -e ""
@@ -446,7 +446,7 @@ leader_solution() {
 
 leader_check() {
     echo -e "[LEADER CHANGED MESSAGES]"
-    for member in $(ls |grep -v "revision"|grep -v "quorum"); do
+    for member in $(ls |grep -v "revision"|grep -v "quorum"|grep -v "guard"); do
       etcd_leader $member
     done
     echo -e ""
@@ -466,7 +466,7 @@ compaction_check() {
   echo -e "should be ideally below 100ms (and below 10ms on fast SSD/NVMe)"
   echo -e "anything above 300ms could mean serious performance issues (including issues with oc login)"
   echo -e ""
-  for member in $(ls |grep -v "revision"|grep -v "quorum"); do
+  for member in $(ls |grep -v "revision"|grep -v "quorum"|grep -v "guard"); do
     etcd_compaction $member
   done
   echo -e ""
