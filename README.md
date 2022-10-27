@@ -19,6 +19,15 @@ will combine logs from ETCD, haproxy, router, apiserver into one timeline printi
 
 > ./must-gather-log_merger.sh <full path to MUST-GATHER>
 
+## etcd-analyzer.sh
+
+do 
+
+> oc login
+> ./etcd-analyzer.sh
+
+and it will print summary of warnings, size of ETCD and number of objects.
+
 ## fio_suite
 
 fio_suite is benchmark tool which runs several fio tests to see how IOPS change under different load.
