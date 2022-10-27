@@ -92,10 +92,13 @@ echo -e "DEPLOYMENT: there is $(cat $OUTPUT_PATH/depimage.log|sort|uniq|grep -v 
 # oc get is -A | awk '{print $2}'
 
 
+echo -e "diffing.."
 # Print images not used by any pod
 
-#awk 'NR == FNR{ a[$0] = 1;next } !a[$0]' pod_images.log is_images.log
+awk 'NR == FNR{ a[$0] = 1;next } !a[$0]' $OUTPUT_PATH/pod_images.log $OUTPUT_PATH/is_images.log > $OUTPUT_PATH/podis.log
 
 # Print images not used by any Deployment
 
-#awk 'NR == FNR{ a[$0] = 1;next } !a[$0]' deploy.log is_images.log
+awk 'NR == FNR{ a[$0] = 1;next } !a[$0]' $OUTPUT_PATH/deploy.log $OUTPUT_PATH/is_images.log > $OUTPUT_PATH/depis.log
+
+awk 'NR == FNR{ a[$0] = 1;next } !a[$0]' $OUTPUT_PATH/depis.log $OUTPUT_PATH/podis.log > $OUTPUT_PATH/EXCESS.log
