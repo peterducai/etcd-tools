@@ -65,7 +65,7 @@ echo -e "REPLICASET: there is $(cat $OUTPUT_PATH/replicasets.log|grep -v 'opensh
 # oc get deployments -A |grep  -E '0{1}/[0-9]+'  > $OUTPUT_PATH/deployments.log
 
 
-#oc get jobs -A|wc -l
+oc get jobs -A|wc -l > $OUTPUT_PATH/jobs.log
 
 
 # oc get deployment -A|awk '{print $2 " -n " $1}'
