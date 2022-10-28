@@ -58,12 +58,13 @@ echo -e "..."
 oc get pods -A -o jsonpath="{..image}" | tr -s '[[:space:]]' '\n'|grep -v 'openshift-release-dev' | sort | uniq  > $OUTPUT_PATH/pod_images.log
 echo -e "PODS: there is $(cat $OUTPUT_PATH/pod_images.log|grep -v 'openshift-release-dev'|wc -l) images referenced by pods."
 
-#replicasets
+# REPLICASETS
 
-# oc get replicasets -A |grep  -E '0{1}\s+0{1}\s+0{1}'|wc -l
-oc get replicasets -A |grep  -E '0{1}\s+0{1}\s+0{1}'| awk '{print "-n " $1, $2}'|sort|uniq > $OUTPUT_PATH/replicasets.log
-#oc get replicasets -A |grep  -E '0{1}\s+0{1}\s+0{1}'| awk '{print "oc delete replicaset -n " $1, $2}' | sh
-echo -e "REPLICASET: there is $(cat $OUTPUT_PATH/replicasets.log|grep -v 'openshift-release-dev'|wc -l) images referenced by ReplicaSets."
+oc get replicasets -A > $OUTPUT_PATH/rs.log
+oc get replicasets -A |grep  -E '0{1}\s+0{1}\s+0{1}'| awk '{print "-n " $1, $2}'|sort|uniq > $OUTPUT_PATH/replicasetsns.log
+echo -e "REPLICASET: there are $(cat $OUTPUT_PATH/rs.log|wc -l) ReplicaSets."
+echo -e "REPLICASET: there is $(cat $OUTPUT_PATH/replicasetsns.log|grep -v 'openshift-release-dev'|wc -l) images referenced by ReplicaSets."
+
 
 # oc get deployments -A |grep  -E '0{1}/[0-9]+'  > $OUTPUT_PATH/deployments.log
 

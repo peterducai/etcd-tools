@@ -5,7 +5,6 @@
 ETCD which is running on masters is key-value database that holds all data and objects of cluster. Any performance issues (timeouts, delays) can lead to unstable cluster.
 
 
-
 ## Namespaces
 
 By default, there are 3 namespaces in a K8s cluster, default, kube-public and kube-system and additionaly openshift-* namespaces in OCP4.
@@ -43,10 +42,11 @@ Resource limits specify the maximum amount of resources a container can use.
 
 ## Operators 
 
+TODO
 
 ### What is Operator doing?
 
-
+TODO
 
 ### Where does Operator run?
 
@@ -54,14 +54,19 @@ If Operator runs also on masters (virus or file scanner), it could have performa
 
 ### Does Operator call OCP API?
 
+TODO
 
 ### Does Operator create CRDs?
 
+TODO
 
 ## Pipelines
 
+TODO
 
 ## 3rd party software and services
+
+TODO
 
 ## Logging
 
@@ -72,5 +77,9 @@ Customer applications produce logs and you should consider add enough resources 
 
 A ReplicaSet ensures that a specified number of pod replicas are running at any given time. However, a Deployment is a higher-level concept that manages ReplicaSets and provides declarative updates to Pods along with a lot of other useful features. Therefore, we recommend using Deployments instead of directly using ReplicaSets, unless you require custom update orchestration or don't require updates at all.
 
-This actually means that you may never need to manipulate ReplicaSet objects: use a Deployment instead, and define your application in the spec section.
+This actually means that you may never need to manipulate ReplicaSet objects use a Deployment instead, and define your application in the spec section.
 
+
+## CLEANUP
+
+It is very important to clean up unused resources that could be referencing other unneeded resources like images or secrets.
