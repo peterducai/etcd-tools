@@ -40,6 +40,12 @@ Resource requests specify the minimum amount of resources a container can use
 Resource limits specify the maximum amount of resources a container can use.
 
 
+## Deployments and Replicasets
+
+.spec.revisionHistoryLimit is an optional field that specifies the number of old ReplicaSets to retain to allow rollback. These old ReplicaSets consume resources in etcd and crowd the output of kubectl get rs. The configuration of each Deployment revision is stored in its ReplicaSets; therefore, once an old ReplicaSet is deleted, you lose the ability to rollback to that revision of Deployment. By default, 10 old ReplicaSets will be kept, however its ideal value depends on the frequency and stability of new Deployments.
+
+This means, that with 2000 deployments you could create up to 20k replicasets and this could have huge performance impact on ETCD.
+
 ## Operators 
 
 TODO
