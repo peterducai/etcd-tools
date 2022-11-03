@@ -4,6 +4,9 @@
 
 ETCD which is running on masters is key-value database that holds all data and objects of cluster. Any performance issues (timeouts, delays) can lead to unstable cluster.
 
+## ETCD object count
+
+ETCD hosted on average storage will usually have performance problems when there is more than ~8k of any of objects (like secrets, deployments, replicasets, etc..)
 
 ## Namespaces
 
@@ -15,12 +18,10 @@ Don't use naked Pods (that is, Pods not bound to a ReplicaSet or Deployment) if 
 
 ## Readiness and Liveness Probes
 
-Readiness and liveness probes are strongly recommended; it is almost always better to use them than to forego them. These probes are essentially health checks.
+Readiness and liveness probes are strongly recommended; it is almost always better to use them than to foreget them. These probes are essentially health checks.
 
-Readiness probe
-Ensures a given pod is up-and-running before allowing the load to get directed to that pod. If the pod is not ready, the requests are taken away from your service until the probe verifies the pod is up.
-Liveness probe
-Verifies if the application is still running or not. This probe tries to ping the pod for a response from it and then check its health. If there is no response, then the application is not running on the pod. The liveness probe launches a new pod and starts the application on it if the check fails.
+Readiness probe ensures a given pod is up-and-running before allowing the load to get directed to that pod. If the pod is not ready, the requests are taken away from your service until the probe verifies the pod is up.
+Liveness probe verifies if the application is still running or not. This probe tries to ping the pod for a response from it and then check its health. If there is no response, then the application is not running on the pod. The liveness probe launches a new pod and starts the application on it if the check fails.
 
 ## Resource Requests and Limits
 
@@ -52,7 +53,7 @@ TODO
 
 ### What is Operator doing?
 
-TODO
+Main concern should be what is operator doing and what overhead it brings. Operators that do lot of API calling, ones that scan the files or create heavy IO/traffic could have big performance impact on the storage. Make sure you understand what Operator is doing, how it affects overall performance and how you can tweak it to avoid such issues.
 
 ### Where does Operator run?
 
@@ -68,7 +69,7 @@ TODO
 
 ## Pipelines
 
-TODO
+Pipeline can be simple, but also complex commands that could create high IO or API activity.
 
 ## 3rd party software and services
 
@@ -88,4 +89,4 @@ This actually means that you may never need to manipulate ReplicaSet objects use
 
 ## CLEANUP
 
-It is very important to clean up unused resources that could be referencing other unneeded resources like images or secrets.
+It is very important to clean up unused resources that could be referencing other unneeded resources like images or secrets. If you run any pipeline that creates CRDs, make sure there is pipeline also to clean up those CRDs.

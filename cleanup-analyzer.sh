@@ -56,23 +56,25 @@ eval set -- "$PARAMS"
 
 #---------------------------------------------------------------------------------
 
-oc get ns |grep -v openshift|grep -v kube|grep -v default > ns.log
-oc get ns > ns_all.log
+oc get ns |grep -v openshift|grep -v kube|grep -v default > $OUTPUT_PATH/ns.log
+oc get ns > $OUTPUT_PATH/ns_all.log
 
 
 imagestreams() {
   #imagestreams referencing images
-  $CLIENT get imagestream -A -o jsonpath="{..dockerImageReference}" | tr -s '[[:space:]]' '\n' |grep -v 'openshift-release-dev' | sort | uniq > $OUTPUT_PATH/is_images.log
+  $CLIENT get imagestream -A -o jsonpath="{..dockerImageReference}" | tr -s '[[:space:]]' '\n'| sort | uniq > $OUTPUT_PATH/is_images.log
   $CLIENT get is -A > $OUTPUT_PATH/is.log
   
-  echo -e "IMAGESTREAM: there are $(cat $OUTPUT_PATH/is_images.log|grep -v 'openshift-release-dev'|wc -l) images referenced by Imagestreams."
+  echo -e "IMAGESTREAM: there are $(cat $OUTPUT_PATH/is_images.log|wc -l) images referenced by Imagestreams."
+  echo -e "IMAGESTREAM: there are $(cat $OUTPUT_PATH/is_images.log|grep openshift-release-dev|wc -l) openshift-release-dev images referenced by Imagestreams."
+  echo -e "IMAGESTREAM: there are $(cat $OUTPUT_PATH/is_images.log|grep -v 'openshift-release-dev'|wc -l) other images referenced by Imagestreams."
   echo -e "..."
 
 }
 
 pods() {
   #images used by pods
-  $CLIENT get pods -A -o jsonpath="{..image}" | tr -s '[[:space:]]' '\n'|grep -v 'openshift-release-dev' | sort | uniq  > $OUTPUT_PATH/pod_images.log
+  $CLIENT get pods -A -o jsonpath="{..image}" | tr -s '[[:space:]]' '\n'| sort | uniq  > $OUTPUT_PATH/pod_images.log
   echo -e "PODS: there are $(cat $OUTPUT_PATH/pod_images.log|grep -v 'openshift-release-dev'|wc -l) images referenced by pods."
 }
 
