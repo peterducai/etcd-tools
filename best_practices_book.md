@@ -19,15 +19,20 @@ For Three-Node OpenShift Compact Clusters, make sure that you have dedicated NVM
 
 Network can handle enough IO and bandwidth between masters is fast enough. Having masters in different DCs is not recommended (as rather [RHACM](https://www.redhat.com/en/technologies/management/advanced-cluster-management) should be used in case of OCP), but if required, network latency should be ideally below 2ms.
 
+Technologies like OCS, big data or even vMotion could mean extremely high IO at specific times (when moving VMs or huge data) and could seriously affect ETCD performance.
+
 **troubleshooting:**
 
 Apart from metrics you can check
 
 ```
-ip -s link show
+  $ oc debug node/<master_node>
+  [...]
+  sh-4.4# chroot /host bash
+  sh-4.4# ip -s link show
 ```
 
-to see if there is no excessive amount of dropped packets or RX/TX errors.
+on each node to see if there is no excessive amount of dropped packets or RX/TX errors.
 
 To see latency, you can run 
 
@@ -40,9 +45,9 @@ ping <node>
 
 ## ETCD object count
 
-ETCD hosted on average storage will usually have performance problems when there is more than ~8k of any of objects (like secrets, deployments, replicasets, etc..) and they have to be periodically cleaned up, unless you move to fastest storage (with low latency and high sequential IOPS).
+ETCD hosted on average storage will usually have performance problems when there is more than ~8k of any of objects (like images, secrets, deployments, replicasets, etc..) and they have to be periodically cleaned up, unless you move to fastest storage (with low latency and high sequential IOPS).
 
-For excessive number of events it's not enough to delete them, but rather it should be identified which pod/operator/pipeline is producing those events.
+For excessive number of events it's not enough to delete them, but rather it should be identified which pod/operator/pipeline is producing those events. Also, creating and deleting too many objects in short time can lead to compaction being triggered too often and this also could have effect on overall performance.
 
 ## Namespaces
 
@@ -56,8 +61,9 @@ Don't use naked Pods (that is, Pods not bound to a ReplicaSet or Deployment) if 
 
 Readiness and liveness probes are strongly recommended; it is almost always better to use them than to foreget them. These probes are essentially health checks.
 
-Readiness probe ensures a given pod is up-and-running before allowing the load to get directed to that pod. If the pod is not ready, the requests are taken away from your service until the probe verifies the pod is up.
-Liveness probe verifies if the application is still running or not. This probe tries to ping the pod for a response from it and then check its health. If there is no response, then the application is not running on the pod. The liveness probe launches a new pod and starts the application on it if the check fails.
+*Readiness probe* ensures a given pod is up-and-running before allowing the load to get directed to that pod. If the pod is not ready, the requests are taken away from your service until the probe verifies the pod is up.
+
+*Liveness probe* verifies if the application is still running or not. This probe tries to ping the pod for a response from it and then check its health. If there is no response, then the application is not running on the pod. The liveness probe launches a new pod and starts the application on it if the check fails.
 
 ## Resource Requests and Limits
 
@@ -73,9 +79,15 @@ resources:
     memory: 100Mi
 ```
 
-Resource requests specify the minimum amount of resources a container can use
-Resource limits specify the maximum amount of resources a container can use.
+*Resource requests* specify the minimum amount of resources a container can use
+*Resource limits* specify the maximum amount of resources a container can use.
 
+
+## When to use a ReplicaSet and Deployment
+
+A ReplicaSet ensures that a specified number of pod replicas are running at any given time. However, a Deployment is a higher-level concept that manages ReplicaSets and provides declarative updates to Pods along with a lot of other useful features. Therefore, we recommend using Deployments instead of directly using ReplicaSets, unless you require custom update orchestration or don't require updates at all.
+
+This actually means that you may never need to manipulate ReplicaSet objects use a Deployment instead, and define your application in the spec section.
 
 ## Deployments and Replicasets
 
@@ -97,7 +109,7 @@ If Operator runs also on masters (virus or file scanner), it could have performa
 
 ### Does Operator call OCP API?
 
-TODO
+Operator that is calling API server very often (collecting statistics or orchestrating CRDs) could have impact on apiserver CPU usage, which could in turn affect also ETCD.
 
 ### Does Operator create CRDs?
 
@@ -114,13 +126,6 @@ TODO
 ## Logging
 
 Customer applications produce logs and you should consider add enough resources (CPU/RAM) to monitoring/infra nodes.
-
-
-## When to use a ReplicaSet
-
-A ReplicaSet ensures that a specified number of pod replicas are running at any given time. However, a Deployment is a higher-level concept that manages ReplicaSets and provides declarative updates to Pods along with a lot of other useful features. Therefore, we recommend using Deployments instead of directly using ReplicaSets, unless you require custom update orchestration or don't require updates at all.
-
-This actually means that you may never need to manipulate ReplicaSet objects use a Deployment instead, and define your application in the spec section.
 
 
 ## CLEANUP
