@@ -6,7 +6,9 @@ ETCD which is running on masters is key-value database that holds all data and o
 
 ## ETCD object count
 
-ETCD hosted on average storage will usually have performance problems when there is more than ~8k of any of objects (like secrets, deployments, replicasets, etc..)
+ETCD hosted on average storage will usually have performance problems when there is more than ~8k of any of objects (like secrets, deployments, replicasets, etc..) unless you use fastest storage (with low latency and high sequential IOPS) on the market.
+
+For excessive number of events it's not enough to delete them, but rather it should be identified which pod/operator/pipeline is producing those events.
 
 ## Namespaces
 
