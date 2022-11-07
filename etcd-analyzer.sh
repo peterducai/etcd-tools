@@ -54,7 +54,7 @@ echo -e ""
 echo -e "-[${ETCD[0]}]--------------------"
 
 echo -e ""
-oc exec -n openshift-etcd ${ETCD[0]} -c etcdctl -- etcdctl endpoint status -w table
+$CLIENT exec -n openshift-etcd ${ETCD[0]} -c etcdctl -- etcdctl endpoint status -w table
 echo -e "IPs:"
 for i in $($CLIENT exec ${ETCD[0]} -c etcd -n openshift-etcd -- ls /sys/class/net|grep -v veth|grep -v lo); do echo $i && oc exec -n openshift-etcd ${ETCD[0]} -c etcd -- ip a s|grep inet|grep -v inet6|grep -v '127.'|head -2; done
 echo -e "Errors and dropped packets:"
