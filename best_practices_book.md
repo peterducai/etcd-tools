@@ -4,15 +4,43 @@
 
 ETCD which is running on masters is key-value database that holds all data and objects of cluster. Any performance issues (timeouts, delays) can lead to unstable cluster.
 
-### ETCD network considerations
 
-Network can handle enough IO and bandwidth between masters is fast enough. Having masters in different DCs is not recommended (as rather RHACM should be used in case of OCP), but if required, network latency should be ideally below 2ms.
+### Master count
+
+On Openshift, only 3 masters are supported and it was confirmed that higher number of masters will not help with performance (as it makes synchronization and network latency even more slow).
+
+If you plan to run extra large clusters with 100+ workers, you should make sure you use best performant storage for masters.
+
+### Storage
 
 For Three-Node OpenShift Compact Clusters, make sure that you have dedicated NVMe or SSD drives for the control plane and separated Drives for application and another infrastructure stacks. Eventually, according to current workload in place, dedicated SSD drives for etcd (/var/lib/etcd) must be also taken in consideration.
 
+### ETCD network considerations
+
+Network can handle enough IO and bandwidth between masters is fast enough. Having masters in different DCs is not recommended (as rather [RHACM](https://www.redhat.com/en/technologies/management/advanced-cluster-management) should be used in case of OCP), but if required, network latency should be ideally below 2ms.
+
+**troubleshooting:**
+
+Apart from metrics you can check
+
+```
+ip -s link show
+```
+
+to see if there is no excessive amount of dropped packets or RX/TX errors.
+
+To see latency, you can run 
+
+```
+curl -k https://api.<OCP URL>.com -w "%{time_connect}\n"
+ping <node>
+```
+
+
+
 ## ETCD object count
 
-ETCD hosted on average storage will usually have performance problems when there is more than ~8k of any of objects (like secrets, deployments, replicasets, etc..) unless you use fastest storage (with low latency and high sequential IOPS) on the market.
+ETCD hosted on average storage will usually have performance problems when there is more than ~8k of any of objects (like secrets, deployments, replicasets, etc..) and they have to be periodically cleaned up, unless you move to fastest storage (with low latency and high sequential IOPS).
 
 For excessive number of events it's not enough to delete them, but rather it should be identified which pod/operator/pipeline is producing those events.
 
@@ -61,7 +89,7 @@ TODO
 
 ### What is Operator doing?
 
-Main concern should be what is operator doing and what overhead it brings. Operators that do lot of API calling, ones that scan the files or create heavy IO/traffic could have big performance impact on the storage. Make sure you understand what Operator is doing, how it affects overall performance and how you can tweak it to avoid such issues.
+Main concern should be what is operator doing and what overhead it brings. Operators that do lot of API calling, ones that scan the files or create heavy IO/traffic could have big performance impact on the storage, CPU or network. Make sure you understand what Operator is doing, how it affects overall performance and how you can tweak it to avoid such issues. Some resource hungry operators might require that you add extra CPU and RAM to your master nodes.
 
 ### Where does Operator run?
 
@@ -77,7 +105,7 @@ TODO
 
 ## Pipelines
 
-Pipeline can be simple, but also complex commands that could create high IO or API activity.
+Pipeline can be simple, but running complex commands that could create high IO or API activity could have impact on masters/ETCD. Another issue could be broken pipeline, that running infinitely in loop could be creating new objects or events.
 
 ## 3rd party software and services
 
