@@ -4,6 +4,12 @@
 
 ETCD which is running on masters is key-value database that holds all data and objects of cluster. Any performance issues (timeouts, delays) can lead to unstable cluster.
 
+### ETCD network considerations
+
+Network can handle enough IO and bandwidth between masters is fast enough. Having masters in different DCs is not recommended (as rather RHACM should be used in case of OCP), but if required, network latency should be ideally below 2ms.
+
+For Three-Node OpenShift Compact Clusters, make sure that you have dedicated NVMe or SSD drives for the control plane and separated Drives for application and another infrastructure stacks. Eventually, according to current workload in place, dedicated SSD drives for etcd (/var/lib/etcd) must be also taken in consideration.
+
 ## ETCD object count
 
 ETCD hosted on average storage will usually have performance problems when there is more than ~8k of any of objects (like secrets, deployments, replicasets, etc..) unless you use fastest storage (with low latency and high sequential IOPS) on the market.
