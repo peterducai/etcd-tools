@@ -51,7 +51,7 @@ For excessive number of events it's not enough to delete them, but rather it sho
 
 ## Namespaces
 
-By default, there are actually three namespaces that Kubernetes ships with: default, kube-system (used for Kubernetes components), and kube-public (used for public resources). kube-public isn’t really used for much right now, and it’s usually a good idea to leave kube-system alone, especially in a managed system like Google Kubernetes Engine (GKE). On Openshift we have several openshift- namespaces used for cluster components).
+By default, there are actually three namespaces that Kubernetes ships with: default, kube-system (used for Kubernetes components), and kube-public (used for public resources). kube-public isn’t really used for much right now, and it’s usually a good idea to leave kube-system alone, especially in a managed system like Google Kubernetes Engine (GKE). On Openshift we have several openshift- namespaces used for cluster components.
 
 This leaves the default Namespace as the place where your services and apps are created.
 
@@ -97,6 +97,11 @@ resources:
 *Resource requests* specify the minimum amount of resources a container can use
 *Resource limits* specify the maximum amount of resources a container can use.
 
+## Images
+
+Huge number of images could not have only effect on ETCD performance, but also registry performance. Searching for or listing images could take several seconds if there's more than 10-15k images.
+
+Be aware that images are referenced also in Deployments and Replicasets and huge number of unused revisions of those (deployments and replicasets) could mean you will be left with huge number of images that won't be deleted when pruning.
 
 ## When to use a ReplicaSet and Deployment
 
