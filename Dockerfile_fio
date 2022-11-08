@@ -1,0 +1,8 @@
+FROM registry.fedoraproject.org/fedora
+RUN dnf install fio util-linux -y && dnf clean all -y
+
+WORKDIR /
+COPY fio_suite.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/fio_suite.sh
+CMD ["/usr/local/bin/fio_suite.sh"]
+ENTRYPOINT ["/usr/local/bin/fio_suite.sh"]
