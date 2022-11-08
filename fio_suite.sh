@@ -13,6 +13,7 @@ echo -e "All output can be found in  $OUTPUT_PATH"
 
 
 mkdir -p $OUTPUT_PATH
+mkdir -p /test
 
 FSYNC_THRESHOLD=10000
 
@@ -38,7 +39,9 @@ echo -e ""
 cat $OUTPUT_PATH/cleanfsynctest.log
 echo -e ""
 FSYNC99=$(cat $OUTPUT_PATH/cleanfsynctest.log |grep "99.00th"|tail -1|cut -d ' ' -f8 |cut -d ']' -f 1)
+sleep 1
 FSYNC999=$(cat $OUTPUT_PATH/cleanfsynctest.log |grep "99.00th"|tail -1|cut -d ' ' -f14 |cut -d ']' -f 1)
+sleep 1
 IOPS=$(cat $OUTPUT_PATH/cleanfsynctest.log |grep IOPS|tail -1| cut -d ' ' -f2-|cut -d ' ' -f3|rev|cut -c2-|rev|cut -c6-)
 if [[ "$IOPS" == *"k" ]]; then
   IOPS=$(echo $IOPS|rev|cut -c2-|rev)
@@ -72,7 +75,7 @@ echo -e ""
 echo -e "[ SEQUENTIAL IOPS TEST ] - [ libaio engine SINGLE JOB, 70% read, 30% write]"
 echo -e " "
 
-/usr/bin/fio --name=seqread1g --filename=fiotest --runtime=120 --ioengine=libaio --direct=1 --ramp_time=10 --readwrite=rw --rwmixread=70 --rwmixwrite=30 --iodepth=1 --bs=8000 --size=1G --percentage_random=0 > $OUTPUT_PATH/r70_w30_1G_d4.log
+/usr/bin/fio --name=seqread1g --filename=fiotest --runtime=120 --ioengine=libaio --direct=1 --ramp_time=10 --readwrite=rw --rwmixread=70 --rwmixwrite=30 --iodepth=1 --bs=4k --size=1G --percentage_random=0 > $OUTPUT_PATH/r70_w30_1G_d4.log
 s7030big=$(cat $OUTPUT_PATH/r70_w30_1G_d4.log |grep IOPS|tail -2)
 FSYNC=$(cat $OUTPUT_PATH/r70_w30_1G_d4.log |grep "99.00th"|tail -1|cut -c17-|grep -oE "([0-9]+)]" -m1|cut -d ']' -f 1|head -1)
 wIOPS=$(cat $OUTPUT_PATH/r70_w30_1G_d4.log |grep IOPS|tail -1| cut -d ' ' -f2-|cut -d ' ' -f3|rev|cut -c2-|rev|cut -c6-)
@@ -95,7 +98,7 @@ echo -e "SEQUENTIAL WRITE IOPS: $wIOPS"
 echo -e "SEQUENTIAL READ IOPS: $rIOPS"
 echo -e "--------------------------"
 
-/usr/bin/fio --name=seqread1mb --filename=fiotest --runtime=120 --ioengine=libaio --direct=1 --ramp_time=10  --readwrite=rw --rwmixread=70 --rwmixwrite=30 --iodepth=1 --bs=8000 --size=200M > $OUTPUT_PATH/r70_w30_200M_d4.log
+/usr/bin/fio --name=seqread1mb --filename=fiotest --runtime=120 --ioengine=libaio --direct=1 --ramp_time=10  --readwrite=rw --rwmixread=70 --rwmixwrite=30 --iodepth=1 --bs=4k --size=200M > $OUTPUT_PATH/r70_w30_200M_d4.log
 s7030small=$(cat $OUTPUT_PATH/r70_w30_200M_d4.log |grep IOPS|tail -2)
 FSYNC=$(cat $OUTPUT_PATH/r70_w30_200M_d4.log |grep "99.00th"|tail -1|cut -c17-|grep -oE "([0-9]+)]" -m1|cut -d ']' -f 1|head -1)
 wIOPS=$(cat $OUTPUT_PATH/r70_w30_200M_d4.log |grep IOPS|tail -1| cut -d ' ' -f2-|cut -d ' ' -f3|rev|cut -c2-|rev|cut -c6-)
@@ -123,7 +126,7 @@ echo -e " "
 echo -e "-- [ libaio engine SINGLE JOB, 30% read, 70% write] --"
 echo -e " "
 
-/usr/bin/fio --name=seqwrite1G --filename=fiotest --runtime=120 --bs=2k --ioengine=libaio --direct=1 --ramp_time=10 --readwrite=rw --rwmixread=30 --rwmixwrite=70 --iodepth=1 --bs=8000 --size=200M  > $OUTPUT_PATH/r30_w70_200M_d1.log
+/usr/bin/fio --name=seqwrite1G --filename=fiotest --runtime=120 --bs=2k --ioengine=libaio --direct=1 --ramp_time=10 --readwrite=rw --rwmixread=30 --rwmixwrite=70 --iodepth=1 --bs=4k --size=200M  > $OUTPUT_PATH/r30_w70_200M_d1.log
 so7030big=$(cat $OUTPUT_PATH/r30_w70_200M_d1.log |grep IOPS|tail -2)
 FSYNC=$(cat $OUTPUT_PATH/r30_w70_200M_d1.log |grep "99.00th"|tail -1|cut -c17-|grep -oE "([0-9]+)]" -m1|cut -d ']' -f 1|head -1)
 wIOPS=$(cat $OUTPUT_PATH/r30_w70_200M_d1.log |grep IOPS|tail -1| cut -d ' ' -f2-|cut -d ' ' -f3|rev|cut -c2-|rev|cut -c6-)
@@ -149,7 +152,7 @@ echo -e "--------------------------"
 # rm read*
 
 echo -e " "
-/usr/bin/fio --name=seqwrite1mb --filename=fiotest --runtime=120 --bs=2k --ioengine=libaio --direct=1 --ramp_time=10 --readwrite=rw --rwmixread=30 --rwmixwrite=70 --iodepth=1 --bs=8000 --size=1G > $OUTPUT_PATH/r30_w70_1G_d1.log
+/usr/bin/fio --name=seqwrite1mb --filename=fiotest --runtime=120 --bs=2k --ioengine=libaio --direct=1 --ramp_time=10 --readwrite=rw --rwmixread=30 --rwmixwrite=70 --iodepth=1 --bs=4k --size=1G > $OUTPUT_PATH/r30_w70_1G_d1.log
 so7030small=$(cat $OUTPUT_PATH/r30_w70_1G_d1.log |grep IOPS|tail -2)
 FSYNC=$(cat $OUTPUT_PATH/r30_w70_1G_d1.log |grep "99.00th"|tail -1|cut -c17-|grep -oE "([0-9]+)]" -m1|cut -d ']' -f 1|head -1)
 wIOPS=$(cat $OUTPUT_PATH/r30_w70_1G_d1.log |grep IOPS|tail -1| cut -d ' ' -f2-|cut -d ' ' -f3|rev|cut -c2-|rev|cut -c6-)
