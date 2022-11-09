@@ -155,6 +155,7 @@ Pipeline can be simple, but running complex commands that could create high IO o
 ## 3rd party software and services
 
 Beware of 3rd party software and services that could potentionaly change following on masters
+
 * Selinux policies
 * Interfere with firewall or proxy
 * Could create load on CPU, RAM, networking or storage
