@@ -19,7 +19,7 @@ For Three-Node OpenShift Compact Clusters, make sure that you have dedicated NVM
 
 Network can handle enough IO and bandwidth between masters is fast enough. Having masters in different DCs is not recommended (as rather [RHACM](https://www.redhat.com/en/technologies/management/advanced-cluster-management) should be used in case of OCP), but if required, network latency should be ideally below 2ms.
 
-Technologies like OCS, big data or even vMotion could mean extremely high IO at specific times (when moving VMs or huge data) and could seriously affect ETCD performance.
+Technologies like OCS, big data or even vMotion could mean extremely high IO at specific times (when moving VMs, huge data or doing backups) and could seriously affect ETCD performance.
 
 **troubleshooting:**
 
@@ -34,7 +34,7 @@ Apart from metrics you can check
 
 on each node to see if there is no excessive amount of dropped packets or RX/TX errors.
 
-To see latency, you can run 
+To see latency, apart from checking metrics you can run 
 
 ```
 curl -k https://api.<OCP URL>.com -w "%{time_connect}\n"
@@ -47,19 +47,21 @@ ping <node>
 
 ETCD hosted on average storage will usually have performance problems when there is more than ~8k of any of objects (like images, secrets, deployments, replicasets, etc..) and they have to be periodically cleaned up, unless you move to fastest storage (with low latency and high sequential IOPS).
 
-For excessive number of events it's not enough to delete them, but rather it should be identified which pod/operator/pipeline is producing those events. Also, creating and deleting too many objects in short time can lead to compaction being triggered too often and this also could have effect on overall performance.
+For excessive number of events it's not enough to delete them, but rather it should be identified which pod/operator/pipeline is producing those events. Also, creating and deleting too many objects in short time can lead to compaction being triggered too often and this also could have effect on overall performance of ETCD.
 
 ## Namespaces
 
-By default, there are actually three namespaces that Kubernetes ships with: default, kube-system (used for Kubernetes components), and kube-public (used for public resources). kube-public isn’t really used for much right now, and it’s usually a good idea to leave kube-system alone, especially in a managed system like Google Kubernetes Engine (GKE). On Openshift we have several openshift- namespaces used for cluster components.
+By default, there are actually three namespaces that Kubernetes ships with: default, kube-system (used for Kubernetes components), and kube-public (used for public resources). kube-public isn’t really used for much right now, and it’s usually a good idea to leave kube-system alone. On Openshift we have several openshift- namespaces used for cluster components.
 
 This leaves the default Namespace as the place where your services and apps are created.
 
-There is absolutely nothing special about this Namespace, except that the Kubernetes tooling is set up out of the box to use this namespace and you can’t delete it. While it is great for getting started and for smaller production systems, I would recommend against using it in large production systems. This is because it is very easy for a team to accidentally overwrite or disrupt another service without even realizing it. Instead, create multiple namespaces and use them to segment your services into manageable chunks.
+There is absolutely nothing special about this Namespace, except that the Kubernetes tooling is set up out of the box to use this namespace and you can’t delete it. While it is great for getting started and for smaller production systems, it is recommended against using it in large production systems. This is because it is very easy for a team to accidentally overwrite or disrupt another service without even realizing it. Instead, create multiple namespaces and use them to segment your services into manageable chunks.
 
 Creating many NS don’t add a performance penalty, and in many cases can actually improve performance as the Kubernetes API will have a smaller set of objects to work with.
 
 Do not overload namespaces with multiple workloads that perform unrelated tasks. Keep your namespaces precise and straightforward.
+
+### Security
 
 Namespaces should not be created at will by anyone in the organization. Allowing individuals to create namespaces without management will lead to many additional environments.
 
@@ -101,9 +103,13 @@ resources:
 *Resource requests* specify the minimum amount of resources a container can use
 *Resource limits* specify the maximum amount of resources a container can use.
 
-# Limit Resource Usage for Specific Namespaces
+### Limit Resource Usage for Specific Namespaces
 
 You can solve this through the application of resource quotas. If you run the aforementioned command to see all namespaced API resources, you’ll note that ResourceQuotas is among them. This means that each namespace can have its own quota that limits the amount of resources it can use from the node. 
+
+### Security
+
+You should always set up containers with resource limits. In the event of a denial of service attack, or even just a burst of very high load on a service, these resource limits will prevent pods from using all available resources in the node they are running on.
 
 ## Images
 
@@ -127,6 +133,8 @@ This means, that with 2000 deployments you could create up to 20k replicasets an
 
 The Operator is a piece of software running in a Pod on the cluster, interacting with the Kubernetes API server. 
 
+Following points should be also for consideration when creating your own operators.
+
 ### What is Operator doing?
 
 Main concern should be what is operator doing and what overhead it brings. Operators that do lot of API calling, ones that scan the files or create heavy IO/traffic could have big performance impact on the storage, CPU or network. Make sure you understand what Operator is doing, how it affects overall performance and how you can tweak it to avoid such issues. Some resource hungry operators might require that you add extra CPU and RAM to your master nodes.
@@ -146,7 +154,10 @@ Pipeline can be simple, but running complex commands that could create high IO o
 
 ## 3rd party software and services
 
-TODO
+Beware of 3rd party software and services that could potentionaly change following on masters
+* Selinux policies
+* Interfere with firewall or proxy
+* Could create load on CPU, RAM, networking or storage
 
 ## Logging, networking and registry
 
@@ -161,3 +172,13 @@ It is very important to clean up unused resources that could be referencing othe
 
 Be consistent
 Re-evaluate constantly
+
+
+
+
+
+
+## Other references
+
+[9 Best Practices for Deploying Highly Available Applications to OpenShift](https://cloud.redhat.com/blog/9-best-practices-for-deploying-highly-available-applications-to-openshift)
+[14 Best Practices for Developing Applications on OpenShift](https://cloud.redhat.com/blog/14-best-practices-for-developing-applications-on-openshift)
