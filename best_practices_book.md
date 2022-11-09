@@ -59,6 +59,10 @@ There is absolutely nothing special about this Namespace, except that the Kubern
 
 Creating many NS don’t add a performance penalty, and in many cases can actually improve performance as the Kubernetes API will have a smaller set of objects to work with.
 
+Do not overload namespaces with multiple workloads that perform unrelated tasks. Keep your namespaces precise and straightforward.
+
+Namespaces should not be created at will by anyone in the organization. Allowing individuals to create namespaces without management will lead to many additional environments.
+
 ### Cross Namespace communication
 
 Namespaces are “hidden” from each other, but they are not fully isolated by default. A service in one Namespace can talk to a service in another Namespace. This can often be very useful, for example to have your team’s service in your Namespace communicate with another team’s service in another Namespace.
@@ -117,7 +121,7 @@ This means, that with 2000 deployments you could create up to 20k replicasets an
 
 ## Operators 
 
-TODO
+The Operator is a piece of software running in a Pod on the cluster, interacting with the Kubernetes API server. 
 
 ### What is Operator doing?
 
