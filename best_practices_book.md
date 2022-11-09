@@ -101,6 +101,10 @@ resources:
 *Resource requests* specify the minimum amount of resources a container can use
 *Resource limits* specify the maximum amount of resources a container can use.
 
+# Limit Resource Usage for Specific Namespaces
+
+You can solve this through the application of resource quotas. If you run the aforementioned command to see all namespaced API resources, you’ll note that ResourceQuotas is among them. This means that each namespace can have its own quota that limits the amount of resources it can use from the node. 
+
 ## Images
 
 Huge number of images could not have only effect on ETCD performance, but also registry performance. Searching for or listing images could take several seconds if there's more than 10-15k images.
@@ -129,15 +133,12 @@ Main concern should be what is operator doing and what overhead it brings. Opera
 
 ### Where does Operator run?
 
-If Operator runs also on masters (virus or file scanner), it could have performance impact on storage (and therefor impact on ETCD).
+If Operator runs also on masters (virus or file scanner), it could have performance impact on master's storage (and therefor impact on ETCD).
 
-### Does Operator call OCP API?
+### How often Operator calls API?
 
 Operator that is calling API server very often (collecting statistics or orchestrating CRDs) could have impact on apiserver CPU usage, which could in turn affect also ETCD.
 
-### Does Operator create CRDs?
-
-TODO
 
 ## Pipelines
 
@@ -147,11 +148,16 @@ Pipeline can be simple, but running complex commands that could create high IO o
 
 TODO
 
-## Logging
+## Logging, networking and registry
 
 Customer applications produce logs and you should consider add enough resources (CPU/RAM) to monitoring/infra nodes.
+
+Another option is to move logging, networking and registry to [infra nodes](https://docs.openshift.com/container-platform/4.11/machine_management/creating-infrastructure-machinesets.html) and offload the masters.
 
 
 ## CLEANUP
 
 It is very important to clean up unused resources that could be referencing other unneeded resources like images or secrets. If you run any pipeline that creates CRDs, make sure there is pipeline also to clean up those CRDs.
+
+Be consistent
+Re-evaluate constantly
