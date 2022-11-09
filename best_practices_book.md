@@ -150,7 +150,7 @@ Operator that is calling API server very often (collecting statistics or orchest
 
 ## Pipelines
 
-Pipeline can be simple, but running complex commands that could create high IO or API activity could have impact on masters/ETCD. Another issue could be broken pipeline, that running infinitely in loop could be creating new objects or events.
+Pipeline can be simple, but running complex commands that could create high IO or API activity could have impact on masters/ETCD. Another issue could be broken pipeline, that running infinitely in loop could be creating new objects, events or contact API too often (which could put stress on the apiserver).
 
 ## 3rd party software and services
 
@@ -165,13 +165,18 @@ Customer applications produce logs and you should consider add enough resources 
 
 Another option is to move logging, networking and registry to [infra nodes](https://docs.openshift.com/container-platform/4.11/machine_management/creating-infrastructure-machinesets.html) and offload the masters.
 
+It should be taken into consideration, how much logging will be produced also by new projects in the future and resources should be added accordingly.
 
-## CLEANUP
+## Cleanup
 
 It is very important to clean up unused resources that could be referencing other unneeded resources like images or secrets. If you run any pipeline that creates CRDs, make sure there is pipeline also to clean up those CRDs.
 
-Be consistent
-Re-evaluate constantly
+# OUTCOME
+
+* Give masters best resources
+* Avoid additional IO on storage or network
+* Re-evaluate constantly with every new project or operator
+* Monitor usage and add resources accordingly
 
 
 
