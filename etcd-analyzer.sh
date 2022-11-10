@@ -140,7 +140,23 @@ cat keysonly.txt | grep event |cut -d/ -f3,4,5| sort | uniq -c | sort -n --rev |
 # oc exec ${ETCD[0]}  -c etcdctl -n openshift-etcd --  etcdctl watch / --prefix  --write-out=fields > fields.txt
 
 
+echo -e ""
+echo -e "[API CONSUMERS kube-apiserver on masters]"
+echo -e ""
+AUDIT_LOGS=$(oc adm node-logs --role=master --path=kube-apiserver/|grep audit-)
+node=""
+for i in $AUDIT_LOGS; do
+  echo -e "[ processing $i ]"
+  if [[ $i == *".log"* ]]; then
+    oc adm node-logs $node --path=kube-apiserver/$i |jq '.user.username' -r > $OUTPUT_PATH/$(echo $i|cut -d ' ' -f2)_2sort.log
+    sort $OUTPUT_PATH/$(echo $i|cut -d ' ' -f2)_2sort.log | uniq -c | sort -bgr
+    echo -e ""
+  else
+    node=$i
+    continue
+  fi
 
+done;
 
 
 

@@ -1,0 +1,133 @@
+= {subject}: PREPARED FOR {customer}
+YOURNAME <yourname@youremail.com>
+:subject: Tutorial 
+:description:  description or title
+:doctype: book
+:confidentiality: Not so Confidential
+:customer:  YOU
+:listing-caption: Listing
+:toc:
+:toclevels: 6
+:numbered:
+:chapter-label:
+:icons: font
+:pdf-page-size: A4
+:pdf-style: my-theme
+:pdf-fontsdir: /usr/share/fonts/redhat/
+// :pdf-fontsdir: /workdir/redhat/
+:pdf-stylesdir: /workdir/assets/style
+ifdef::backend-pdf[]
+:source-highlighter: rouge
+:rouge-style: github
+endif::[]
+:revnumber: 0.2
+// A simple http://asciidoc.org[AsciiDoc] document.
+// vim: set syntax=asciidoc:
+
+== History and Revisions
+
+[cols=4,cols="1,1,3,4",options=header]
+|===
+|Version
+|Date
+|Authors
+|Changes
+
+
+|0.2
+|
+|YOURNAME <yourname@youremail.com>
+|Initial version of the document
+
+|===
+
+
+== Preface
+
+=== Confidentiality, Copyright, and Disclaimer ===
+This is public document and you can do what you like with it
+
+=== About This Document
+This document contains details of how podman and buildah works.
+
+=== Audience
+The audience of the document is {customer}'s Linux Administrators
+
+=== Additional Background and Related Documents
+This document does not contain anything extra
+
+=== Terminology
+Provide a glossary for terminology that may not be common knowledge with the intended audience. Define terms and expand then define acronyms. If the terminology table exceeds a full page in length, it should probably be moved to an Appendix with a reference to the appendix in this section in place of the table.
+
+.Terminology Table
+[cols=2,cols="1,5",options=header]
+|===
+<|Term <|Definition
+
+|OCI
+|Open Container Initiative
+
+|Image
+|container image
+
+|Runtime
+|container runtime is software that executes containers and manages images
+
+
+|===
+
+== OCI 
+
+Long before Open Container Initiative (OCI) was created there were many different container runtimes, each with it's own specification. The OCI was created as open governance body formed by Docker and other container leaders under the auspices of the Linux Foundation, for the purpose of creating unified open industry standard. Currently this standard contains the Runtime Specification and the Image Specification (image-spec).
+
+== Buildah and Podman overview
+
+=== Buildah
+
+The Buildah is CLI tool to create container. You can either start from scratch or use existing image from image registries like docker.com, quay.io or redhat.com. In our case we're using Fedora image which is served by docker.com
+
+```sh
+ctr1=$(buildah from "${1:-fedora}")
+```
+
+
+
+* images can be built in either the OCI image format or the traditional upstream docker * image format
+* mount and umount working container's root filesystem for manipulation
+
+* use the updated contents of a container's root filesystem as a filesystem layer to create * a new image
+
+
+=== Podman
+
+Podman is a daemonless container engine for developing, managing, and running OCI Containers on your Linux System.
+
+=== Comparison
+
+Buildah specializes in building OCI images and can replicate all of the commands that are found in a Dockerfile. This allows building images with and without Dockerfiles while not requiring any root privileges. 
+
+Podman specializes in all of the commands and functions that help you to maintain and modify OCI images, such as pulling and tagging. It also allows you to create, run, and maintain those containers created from those images. For building container images via Dockerfiles, Podman uses Buildah's golang API and can be installed independently from Buildah.
+
+A major difference between Podman and Buildah is their concept of a container. In short, Buildah is an efficient way to create OCI images while Podman allows you to manage and maintain those images and containers in a production environment using familiar container cli commands.
+
+Let's take a look at our script called journal.sh
+
+```sh
+#!/bin/bash
+
+ctr1=$(buildah from "${1:-fedora}")
+
+## Get all updates and install ruby
+buildah run "$ctr1" -- dnf update -y
+buildah run "$ctr1" -- dnf install -y rubygems liberation-fonts-common
+buildah run "$ctr1" -- gem install asciidoctor
+buildah run "$ctr1" -- gem install --pre asciidoctor-pdf
+buildah run "$ctr1" -- gem install coderay pygments.rb rouge
+buildah run "$ctr1" -- mkdir -p /workdir
+
+## Include some buildtime annotations
+buildah config --annotation "com.example.build.host=$(uname -n)" "$ctr1"
+
+## Commit this container to an image name
+buildah commit "$ctr1" "${2:-$USER/journal}"
+```
