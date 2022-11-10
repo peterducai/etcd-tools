@@ -4,6 +4,9 @@ MUST_PATH=$1
 PLOT=$2
 STAMP=$(date +%Y-%m-%d_%H-%M-%S)
 REPORT_FOLDER="$HOME/ETCD-SUMMARY_$STAMP"
+ORIG_PATH=$(pwd)
+OUTPUT_PATH=$ORIG_PATH/DATA
+
 mkdir -p $REPORT_FOLDER
 echo "created $REPORT_FOLDER"
 
@@ -476,6 +479,37 @@ compaction_check() {
   # fi
 }
 
+
+audit_logs() {
+  cd $MUST_PATH
+  cd $(echo */)
+  cd audit_logs/kube-apiserver/
+  echo -e ""
+  echo -e "[API CONSUMERS kube-apiserver on masters]"
+  echo -e ""
+  AUDIT_LOGS=$(ls *.gz|grep audit)
+  node=""
+
+  for i in $AUDIT_LOGS; do
+    #echo -e "[ extracting $i ]"
+    gzip -d $i  
+  done;
+
+  AUDIT_LOGS=$(ls *.log)
+  for i in $AUDIT_LOGS; do
+    echo -e "[ processing $i ]"
+    if [[ $i == *".log"* ]]; then
+      cat $i |jq '.user.username' -r > $OUTPUT_PATH/$(echo $i|cut -d ' ' -f2)_2sort.log
+      sort $OUTPUT_PATH/$(echo $i|cut -d ' ' -f2)_2sort.log | uniq -c | sort -bgr| head -10
+      echo -e ""
+    else
+      node=$i
+      continue
+    fi
+  
+  done;
+}
+
 # timed out waiting for read index response (local node might have slow network)
 
 compaction_check
@@ -485,6 +519,7 @@ ntp_check
 # heart_check
 space_check
 leader_check
+audit_logs
 
 
 echo -e ""
