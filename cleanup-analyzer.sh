@@ -81,6 +81,7 @@ pods() {
 
 replicasets() {
   $CLIENT get replicasets -A > $OUTPUT_PATH/rs.log
+  INACTIVE_OLDER=$(cat $OUTPUT_PATH/rs.log |grep  -E '0{1}\s+0{1}\s+0{1}'| awk '($6*3600) > (20*3600) {print "oc describe rs -n " $1, $2, $6 }'|sort -k 7n|uniq|wc -l)
   cat $OUTPUT_PATH/rs.log |grep  -E '0{1}\s+0{1}\s+0{1}'| awk '{print "-n " $1, $2}'|sort|uniq > $OUTPUT_PATH/rs_inactive.log
   #cat rs.log |grep  -E '0{1}\s+0{1}\s+0{1}'| awk '{print "oc describe rs -n " $1, $2, $6, ($6*3600) }'|sort -k 7n|uniq
   $CLIENT get rs -A  -o jsonpath="{..image}" | tr -s '[[:space:]]' '\n' | sort | uniq > $OUTPUT_PATH/rs_images.log
@@ -89,7 +90,8 @@ replicasets() {
   echo -e "REPLICASET: there are $(cat $OUTPUT_PATH/rs_inactive.log|wc -l) INACTIVE ReplicaSets."
   echo -e "REPLICASET: there are $(cat $OUTPUT_PATH/rs_images.log|wc -l) images referenced by ReplicaSets."
   echo -e ""
-  echo -e "There is $(  cat $OUTPUT_PATH/rs.log |grep  -E '0{1}\s+0{1}\s+0{1}'| awk '($6*3600) > (20*3600) {print "oc describe rs -n " $1, $2, $6 }'|sort -k 7n|uniq|wc -l) RS older than 20 days"
+
+  echo -e "There is $INACTIVE_OLDER RS older than 20 days"
   echo -e ""
   # cat $OUTPUT_PATH/rs.log |grep  -E '0{1}\s+0{1}\s+0{1}'| awk '($6*3600) > (20*3600) {print "oc describe rs -n " $1, $2, $6 }'|sort -k 7n|uniq
 }
@@ -130,7 +132,7 @@ echo -e "DEPLOYMENT: there is $(cat $OUTPUT_PATH/depimage.log|sort|uniq|wc -l) i
 # $CLIENT get is -A | awk '{print $2}'
 
 
-echo -e "diffing.."
+# echo -e "diffing.."
 # Print images not used by any pod
 
 awk 'NR == FNR{ a[$0] = 1;next } !a[$0]' $OUTPUT_PATH/pod_images.log $OUTPUT_PATH/is_images.log > $OUTPUT_PATH/podis.log
