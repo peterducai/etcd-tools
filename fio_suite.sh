@@ -8,7 +8,7 @@ FSYNC_THRESHOLD=10000
 FSYNC_EDGE=8000
 
 echo -e "-------------------------------------------------------"
-echo -e "FIO SUITE version 0.1.4"
+echo -e "FIO SUITE version 0.2.0"
 echo -e "-------------------------------------------------------"
 echo -e " "
 echo -e "WARNING: this test can run for several minutes without any progress! Please wait until it finish!"
@@ -32,12 +32,12 @@ mkdir -p /test
 
 # echo -e " "
 echo -e ""
-echo -e "[ SEQUENTIAL IOPS TEST ]-------------------------------------------------------"
+echo -e "- [ SEQUENTIAL IOPS TEST ]-------------------------------------------------------"
 echo -e ""
 
-echo -e "[ ETCD-like FSYNC WRITE with fsync engine]"
+echo -e "  [ ETCD-like FSYNC WRITE with fsync engine]"
 echo -e ""
-echo -e "the 99.0th and 99.9th percentile of this metric should be less than 10ms (10k)"
+echo -e "  the 99.0th and 99.9th percentile of this metric should be less than 10ms (10k)"
 mkdir -p test-data
 /usr/bin/fio --rw=write --ioengine=sync --fdatasync=1 --directory=test-data --size=22m --bs=8000 --name=cleanfsynctest > $OUTPUT_PATH/cleanfsynctest.log
 echo -e ""
@@ -45,7 +45,7 @@ cat $OUTPUT_PATH/cleanfsynctest.log
 echo -e ""
 cat $OUTPUT_PATH/cleanfsynctest.log |grep "99.90th"|tail -1 > $OUTPUT_PATH/fsyncline
 echo -e ""
-echo -e "IMPORTANT fsync percentiles:   $(cat $OUTPUT_PATH/fsyncline)"
+echo -e "  IMPORTANT fsync percentiles:   $(cat $OUTPUT_PATH/fsyncline)"
 sleep 2
 
 cat $OUTPUT_PATH/fsyncline|cut -d ' ' -f8 |cut -d ']' -f 1 > $OUTPUT_PATH/fsync99
@@ -66,28 +66,28 @@ fi
 echo -e "-------------------------------------------------------"
 echo -e "SEQUENTIAL IOPS: $IOPS"
 if (( "$IOPS" < 300 )); then
-    echo -e "BAD.. IOPS is too low to run stable cluster.  $IOPS"
+    echo -e "  BAD.. IOPS is too low to run stable cluster.  $IOPS"
 fi
 if (( "$FSYNC99" > 10000 )); then
-    echo -e "BAD.. 99.0th fsync is higher than 10ms (10k).  $FSYNC99"
+    echo -e "  BAD.. 99.0th fsync is higher than 10ms (10k).  $FSYNC99"
 else
-    echo -e "OK.. 99.0th fsync is less than 10ms (10k).  $FSYNC99"
+    echo -e "  OK.. 99.0th fsync is less than 10ms (10k).  $FSYNC99"
 fi
 if (( "$FSYNC999" > 10000 )); then
-    echo -e "BAD.. 99.9th fsync is higher than 10ms (10k).  $FSYNC999"
+    echo -e "  BAD.. 99.9th fsync is higher than 10ms (10k).  $FSYNC999"
 else
-    echo -e "OK.. 99.9th fsync is less than 10ms (10k).  $FSYNC999"
+    echo -e "  OK.. 99.9th fsync is less than 10ms (10k).  $FSYNC999"
 fi
 if (( "$FSYNC999" > 8500 && "$FSYNC999" < 10000)); then
-    echo -e "WARNING.. 99.9th fsync is $FSYNC999 which is close to threshold 10ms (10k). Extra IO could make this value much worse."
+    echo -e "  WARNING.. 99.9th fsync is $FSYNC999 which is close to threshold 10ms (10k). Extra IO could make this value much worse."
 fi
 echo -e "-------------------------------------------------------"
 echo -e ""
 
 
-echo -e "[ libaio engine SINGLE JOB, 70% read, 30% write]"
+echo -e "  [ libaio engine SINGLE JOB, 70% read, 30% write]"
 echo -e ""
-echo -e "This test is only for reference IOPS as it doesn't fully represent sequential IOPS of fsync."
+echo -e "  This test is only for reference IOPS as it doesn't fully represent sequential IOPS of fsync."
 
 /usr/bin/fio --name=seqread1g --filename=fiotest --runtime=120 --ioengine=libaio --direct=1 --ramp_time=10 --readwrite=rw --rwmixread=70 --rwmixwrite=30 --iodepth=1 --bs=4k --size=1G --percentage_random=0 > $OUTPUT_PATH/r70_w30_1G_d4.log
 s7030big=$(cat $OUTPUT_PATH/r70_w30_1G_d4.log |grep IOPS|tail -2)
