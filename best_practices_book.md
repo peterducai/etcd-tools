@@ -2,7 +2,7 @@
 
 ## Importance of masters and ETCD
 
-ETCD which is running on masters is key-value database that holds all data and objects of cluster. Any performance issues (timeouts, delays) can lead to unstable cluster.
+ETCD which is running on masters is key-value database that holds all data and objects of cluster. Any performance issues (timeouts, delays) can lead to unstable cluster as all components are talking to ETCD (thru apiserver).
 
 It is common mistake to check only 'etcdctl endpoint health', where status 'healthy' means that etcd member is running, but doesn't tell us actually anything about its performance and could lead us to false impression that everything is fine.
 
