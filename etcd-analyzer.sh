@@ -42,13 +42,12 @@ eval set -- "$PARAMS"
 
 #---------------------------------------------------------------------------------
 
-#/bin/bash
 
-STAMP="$(echo $stamp|tr _ ' '|xargs -0 date -d)"
 
 MASTERS=$($CLIENT get nodes |grep master|cut -d ' ' -f1)
 ETCD=( $($CLIENT --as system:admin -n openshift-etcd get -l k8s-app=etcd pods -o name | tr -s '\n' ' ' | sed 's/pod\///g' ) )
-
+API=$( oc config view --minify -o jsonpath='{.clusters[*].cluster.server}' )
+echo -e "API URL: $API"
 
 echo -e ""
 echo -e "-[${ETCD[0]}]--------------------"
@@ -60,7 +59,7 @@ for i in $($CLIENT exec ${ETCD[0]} -c etcd -n openshift-etcd -- ls /sys/class/ne
 echo -e "Errors and dropped packets:"
 for i in $($CLIENT exec ${ETCD[0]} -c etcd -n openshift-etcd -- ls /sys/class/net|grep -v veth|grep -v lo); do oc exec -n openshift-etcd ${ETCD[0]} -c etcd -- ip -s link show dev $i; done
 echo -e ""
-echo -e "Latency against API is $(curl -sk https://api.$(echo ${ETCD[0]}| sed 's/.*://').com -w "%{time_connect}\n"|tail -1)"
+echo -e "Latency against API is $(curl -sk $API -w "%{time_connect}\n"|tail -1)"
 echo -e ""
 echo -e "LOGS \nstart on $($CLIENT logs ${ETCD[0]} -c etcd -n openshift-etcd|head -60|tail -1|cut -d ':' -f3|cut -c 2-14)"
 echo -e "ends on $($CLIENT logs ${ETCD[0]} -c etcd -n openshift-etcd|tail -1|cut -d ':' -f3|cut -c 2-14)"
@@ -84,7 +83,7 @@ for i in $($CLIENT exec ${ETCD[1]} -c etcd -n openshift-etcd -- ls /sys/class/ne
 echo -e "Errors and dropped packets:"
 for i in $($CLIENT exec ${ETCD[1]} -c etcd -n openshift-etcd -- ls /sys/class/net|grep -v veth|grep -v lo); do oc exec -n openshift-etcd ${ETCD[1]} -c etcd -- ip -s link show dev $i; done
 echo -e ""
-echo -e "Latency against API is $(curl -sk https://api.$(echo ${ETCD[1]}| sed 's/.*://').com -w "%{time_connect}\n"|tail -1)"
+echo -e "Latency against API is $(curl -sk $API -w "%{time_connect}\n"|tail -1)"
 echo -e ""
 echo -e "LOGS \nstart on $($CLIENT logs ${ETCD[1]} -c etcd -n openshift-etcd|head -60|tail -1|cut -d ':' -f3|cut -c 2-14)"
 echo -e "ends on $($CLIENT logs ${ETCD[1]} -c etcd -n openshift-etcd|tail -1|cut -d ':' -f3|cut -c 2-14)"
@@ -108,7 +107,7 @@ for i in $($CLIENT exec ${ETCD[2]} -c etcd -n openshift-etcd -- ls /sys/class/ne
 echo -e "Errors and dropped packets:"
 for i in $($CLIENT exec ${ETCD[2]} -c etcd -n openshift-etcd -- ls /sys/class/net|grep -v veth|grep -v lo); do oc exec -n openshift-etcd ${ETCD[2]} -c etcd -- ip -s link show dev $i; done
 echo -e ""
-echo -e "Latency against API is $(curl -sk https://api.$(echo ${ETCD[2]}| sed 's/.*://').com -w "%{time_connect}\n"|tail -1)"
+echo -e "Latency against API is $(curl -sk $API -w "%{time_connect}\n"|tail -1)"
 echo -e ""
 echo -e "LOGS \nstart on $($CLIENT logs ${ETCD[2]} -c etcd -n openshift-etcd|head -60|tail -1|cut -d ':' -f3|cut -c 2-14)"
 echo -e "ends on $($CLIENT logs ${ETCD[2]} -c etcd -n openshift-etcd|tail -1|cut -d ':' -f3|cut -c 2-14)"
