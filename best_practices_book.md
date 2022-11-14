@@ -4,6 +4,8 @@
 
 ETCD which is running on masters is key-value database that holds all data and objects of cluster. Any performance issues (timeouts, delays) can lead to unstable cluster.
 
+It is common mistake to check only 'etcdctl endpoint health', where status 'healthy' means that etcd member is running, but doesn't tell us actually anything about its performance and could lead us to false impression that everything is fine.
+
 
 ### Master count
 
@@ -150,7 +152,7 @@ Operator that is calling API server very often (collecting statistics or orchest
 
 ## Pipelines
 
-Pipeline can be simple, but running complex commands that could create high IO or API activity could have impact on masters/ETCD. Another issue could be broken pipeline, that running infinitely in loop could be creating new objects, events or contact API too often (which could put stress on the apiserver).
+Pipeline can be simple, but running complex commands that could create high IO or API activity could have impact on masters/ETCD. Another issue could be broken pipeline, that running infinitely in loop could be creating new objects, events or contact API too often (which could put stress on the apiserver). 
 
 ## 3rd party software and services
 
@@ -175,7 +177,7 @@ It is very important to clean up unused resources that could be referencing othe
 # OUTCOME
 
 * Give masters best resources
-* Avoid additional IO on storage or network
+* Avoid additional IO on storage or network on master nodes
 * Re-evaluate constantly with every new project or operator
 * Monitor usage and add resources accordingly
 
@@ -186,5 +188,6 @@ It is very important to clean up unused resources that could be referencing othe
 
 ## Other references
 
+[Delete ETCD events](https://access.redhat.com/solutions/6171352)
 [9 Best Practices for Deploying Highly Available Applications to OpenShift](https://cloud.redhat.com/blog/9-best-practices-for-deploying-highly-available-applications-to-openshift)
 [14 Best Practices for Developing Applications on OpenShift](https://cloud.redhat.com/blog/14-best-practices-for-developing-applications-on-openshift)
