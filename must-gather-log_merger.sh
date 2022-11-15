@@ -79,18 +79,20 @@ cd $MUST_PATH
 cd $(echo */)
 cd namespaces/$ETCD_NS/pods
 
-etcd_check() {
+etcd_check() {    #  elected leader
     i=0
     
     for member in $(ls |grep -v "revision"|grep -v "quorum"); do
       echo "processing $member"
       echo -e "" > $OUTPUT_PATH/$member.log
       cat $member/etcd/etcd/logs/current.log |grep "$TIMELINE"|grep 'likely'|cut -d ' ' -f1| \
-        xargs -I {} echo -e "{} ailed to send out heartbeat on time; took too long, leader is overloaded likely from slow disk     [$member] !!!" | while read -r line; do echo -e "${color[$i]}$line$NONE" >> $OUTPUT_PATH/$member.log; done
+        xargs -I {} echo -e "{} failed to send out heartbeat on time; took too long, leader is overloaded likely from slow disk     [$member] !!!" | while read -r line; do echo -e "${color[$i]}$line$NONE" >> $OUTPUT_PATH/$member.log; done
       # cat $member/etcd/etcd/logs/current.log |grep "$TIMELINE"|grep 'took too long'|cut -d ' ' -f1| \
         # xargs -I {} echo -e "{} took too long  [$member]" | while read -r line; do echo -e "${color[$i]}$line$NONE" >> $OUTPUT_PATH/$member.log; done
-      cat $member/etcd/etcd/logs/current.log |grep "$TIMELINE"|grep 'leader'|cut -d ' ' -f1| \
-        xargs -I {} echo -e "{} LEADER changed [$member] !" | while read -r line; do echo -e "${color[$i]}$line$NONE" >> $OUTPUT_PATH/$member.log; done
+      cat $member/etcd/etcd/logs/current.log |grep "$TIMELINE"|grep 'leader changed'|cut -d ' ' -f1| \
+        xargs -I {} echo -e "{} took too long due to LEADER changed [$member] !" | while read -r line; do echo -e "${color[$i]}$line$NONE" >> $OUTPUT_PATH/$member.log; done
+      cat $member/etcd/etcd/logs/current.log |grep "$TIMELINE"|grep 'elected leader'|cut -d ' ' -f1| \
+        xargs -I {} echo -e "{} LEADER changed [$member] !!" | while read -r line; do echo -e "${color[$i]}$line$NONE" >> $OUTPUT_PATH/$member.log; done
       cat $member/etcd/etcd/logs/current.log |grep "$TIMELINE"|grep 'clock'|cut -d ' ' -f1| \
         xargs -I {} echo -e "{} NTP clock difference [$member] !!" | while read -r line; do echo -e "${color[$i]}$line$NONE" >> $OUTPUT_PATH/$member.log; done
       cat $member/etcd/etcd/logs/current.log |grep "$TIMELINE"|grep 'buffer'|cut -d ' ' -f1| \

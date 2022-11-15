@@ -64,10 +64,11 @@ imagestreams() {
   echo -e "[IMAGESTREAMS]"
   $CLIENT get imagestream -A -o jsonpath="{..dockerImageReference}" | tr -s '[[:space:]]' '\n'| sort | uniq > $OUTPUT_PATH/is_images.log
   $CLIENT get is -A > $OUTPUT_PATH/is.log
-  
-  echo -e "IMAGESTREAM: there are $(cat $OUTPUT_PATH/is_images.log|wc -l) images referenced by Imagestreams."
-  echo -e "IMAGESTREAM: there are $(cat $OUTPUT_PATH/is_images.log|grep openshift-release-dev|wc -l) openshift-release-dev images referenced by Imagestreams."
-  echo -e "IMAGESTREAM: there are $(cat $OUTPUT_PATH/is_images.log|wc -l) other images referenced by Imagestreams."
+  ISALL=$(cat $OUTPUT_PATH/is_images.log|wc -l)
+  ISDEV=$(cat $OUTPUT_PATH/is_images.log|grep openshift-release-dev|wc -l)
+  echo -e "IMAGESTREAM: there are $ISALL images referenced by Imagestreams."
+  echo -e "IMAGESTREAM: there are $ISDEV openshift-release-dev images referenced by Imagestreams."
+  echo -e "IMAGESTREAM: there are $(("$ISALL"-"$ISDEV")) other images referenced by Imagestreams."
   echo -e "..."
 
 }
@@ -87,7 +88,7 @@ replicasets() {
   echo -e ""
   echo -e "[REPLICASETS]"
   $CLIENT get replicasets -A > $OUTPUT_PATH/rs.log
-  INACTIVE_OLDER=$(cat $OUTPUT_PATH/rs.log |grep  -E '0{1}\s+0{1}\s+0{1}'| awk '($6*3600) > (20*3600) {print "oc describe rs -n " $1, $2, $6 }'|sort -k 7n|uniq|wc -l)
+  INACTIVE_OLDER_RS=$(cat $OUTPUT_PATH/rs.log |grep  -E '0{1}\s+0{1}\s+0{1}'| awk '($6*3600) > (20*3600) {print "oc describe rs -n " $1, $2, $6 }'|sort -k 7n|uniq|wc -l)
   cat $OUTPUT_PATH/rs.log |grep  -E '0{1}\s+0{1}\s+0{1}'| awk '{print "-n " $1, $2}'|sort|uniq > $OUTPUT_PATH/rs_inactive.log
   #cat rs.log |grep  -E '0{1}\s+0{1}\s+0{1}'| awk '{print "oc describe rs -n " $1, $2, $6, ($6*3600) }'|sort -k 7n|uniq
   $CLIENT get rs -A  -o jsonpath="{..image}" | tr -s '[[:space:]]' '\n' | sort | uniq > $OUTPUT_PATH/rs_images.log
@@ -96,8 +97,7 @@ replicasets() {
   echo -e "REPLICASET: there are $(cat $OUTPUT_PATH/rs_inactive.log|wc -l) INACTIVE ReplicaSets."
   echo -e "REPLICASET: there are $(cat $OUTPUT_PATH/rs_images.log|wc -l) images referenced by ReplicaSets."
   echo -e ""
-
-  echo -e "There is $INACTIVE_OLDER RS older than 20 days"
+  echo -e "There are $INACTIVE_OLDER_RS replicasets older than 20 days"
   echo -e ""
   # cat $OUTPUT_PATH/rs.log |grep  -E '0{1}\s+0{1}\s+0{1}'| awk '($6*3600) > (20*3600) {print "oc describe rs -n " $1, $2, $6 }'|sort -k 7n|uniq
 }
@@ -107,14 +107,23 @@ deployments() {
   echo -e "[DEPLOYMENTS]"
   $CLIENT get deployment -A|tail -n +2 > $OUTPUT_PATH/deployment.log
   echo -e "DEPLOYMENT: There is $(cat $OUTPUT_PATH/deployment.log|wc -l) deployments."
+  INACTIVE_OLDER_DEP=$(cat $OUTPUT_PATH/deployment.log |grep  -E '0{1}\s+0{1}\s+0{1}'| awk '($6*3600) > (20*3600) {print "oc describe rs -n " $1, $2, $6 }'|sort -k 7n|uniq|wc -l)
   cat $OUTPUT_PATH/deployment.log |awk '{print $2" -n "$1}' > $OUTPUT_PATH/deploy.log
 # while IFS= read -r line; do $CLIENT describe deployment $line |grep Image | awk '{print $2}'; done < deployment.log
 
   $CLIENT get deployment -A -o jsonpath="{..image}" | tr -s '[[:space:]]' '\n' | sort | uniq > $OUTPUT_PATH/depimage.log
-# while IFS= read -r line; do $CLIENT describe deployment $line |grep Image | awk '{print $2}'; done < $OUTPUT_PATH/deploy.log > $OUTPUT_PATH/depimage.log
-# sort $OUTPUT_PATH/depimage.log |uniq|wc -l
-# echo -e "DEPLOYMENT: there is $(cat $OUTPUT_PATH/depimage.log|sort|uniq|wc -l) images referenced by Deployments."
   echo -e "DEPLOYMENT: there is $(cat $OUTPUT_PATH/depimage.log|sort|uniq|wc -l) images referenced by Deployments."
+  
+  echo -e ""
+  echo -e "There are $INACTIVE_OLDER_DEP deployments older than 20 days"
+  echo -e ""
+}
+
+jobs() {
+  echo -e ""
+  echo -e "[JOBS]"
+  $CLIENT get jobs -A|tail -n +2 > $OUTPUT_PATH/jobs.log
+  echo -e "JOBS: there are $(cat $OUTPUT_PATH/jobs.log|wc -l) jobs."
 }
 
 delete_rs() {
@@ -125,25 +134,9 @@ imagestreams
 pods
 deployments
 replicasets
+jobs
 
 
-# $CLIENT get deployments -A |grep  -E '0{1}/[0-9]+'  > $OUTPUT_PATH/deployments.log
-
-
-$CLIENT get jobs -A|wc -l > $OUTPUT_PATH/jobs.log
-
-
-# $CLIENT get deployment -A|awk '{print $2 " -n " $1}'
-
-# $CLIENT describe deployment alpine -n foo|grep Image | awk '{print $2}'
-
-
-
-
-
-
-
-# $CLIENT get is -A | awk '{print $2}'
 
 
 # echo -e "diffing.."
@@ -154,7 +147,6 @@ awk 'NR == FNR{ a[$0] = 1;next } !a[$0]' $OUTPUT_PATH/pod_images.log $OUTPUT_PAT
 # Print images not used by any Deployment
 
 awk 'NR == FNR{ a[$0] = 1;next } !a[$0]' $OUTPUT_PATH/deploy.log $OUTPUT_PATH/is_images.log > $OUTPUT_PATH/depis.log
-
 awk 'NR == FNR{ a[$0] = 1;next } !a[$0]' $OUTPUT_PATH/depis.log $OUTPUT_PATH/podis.log > $OUTPUT_PATH/EXCESS.log
 
 
