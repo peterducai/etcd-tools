@@ -60,7 +60,8 @@ oc get ns > $OUTPUT_PATH/ns_all.log
 
 
 imagestreams() {
-  #imagestreams referencing images
+  echo -e ""
+  echo -e "[IMAGESTREAMS]"
   $CLIENT get imagestream -A -o jsonpath="{..dockerImageReference}" | tr -s '[[:space:]]' '\n'| sort | uniq > $OUTPUT_PATH/is_images.log
   $CLIENT get is -A > $OUTPUT_PATH/is.log
   
@@ -72,7 +73,10 @@ imagestreams() {
 }
 
 pods() {
-  #images used by pods
+  echo -e ""
+  echo -e "[PODS]"
+  $CLIENT get pods -A|tail -n +2 > $OUTPUT_PATH/pod.log
+  echo -e "PODS: there are $(cat $OUTPUT_PATH/pod.log|wc -l) pods."
   $CLIENT get pods -A -o jsonpath="{..image}" | tr -s '[[:space:]]' '\n'| sort | uniq  > $OUTPUT_PATH/pod_images.log
   echo -e "PODS: there are $(cat $OUTPUT_PATH/pod_images.log|wc -l) images referenced by pods."
 }
@@ -80,6 +84,8 @@ pods() {
 # REPLICASETS
 
 replicasets() {
+  echo -e ""
+  echo -e "[REPLICASETS]"
   $CLIENT get replicasets -A > $OUTPUT_PATH/rs.log
   INACTIVE_OLDER=$(cat $OUTPUT_PATH/rs.log |grep  -E '0{1}\s+0{1}\s+0{1}'| awk '($6*3600) > (20*3600) {print "oc describe rs -n " $1, $2, $6 }'|sort -k 7n|uniq|wc -l)
   cat $OUTPUT_PATH/rs.log |grep  -E '0{1}\s+0{1}\s+0{1}'| awk '{print "-n " $1, $2}'|sort|uniq > $OUTPUT_PATH/rs_inactive.log
@@ -96,12 +102,28 @@ replicasets() {
   # cat $OUTPUT_PATH/rs.log |grep  -E '0{1}\s+0{1}\s+0{1}'| awk '($6*3600) > (20*3600) {print "oc describe rs -n " $1, $2, $6 }'|sort -k 7n|uniq
 }
 
+deployments() {
+  echo -e ""
+  echo -e "[DEPLOYMENTS]"
+  $CLIENT get deployment -A|tail -n +2 > $OUTPUT_PATH/deployment.log
+  echo -e "DEPLOYMENT: There is $(cat $OUTPUT_PATH/deployment.log|wc -l) deployments."
+  cat $OUTPUT_PATH/deployment.log |awk '{print $2" -n "$1}' > $OUTPUT_PATH/deploy.log
+# while IFS= read -r line; do $CLIENT describe deployment $line |grep Image | awk '{print $2}'; done < deployment.log
+
+  $CLIENT get deployment -A -o jsonpath="{..image}" | tr -s '[[:space:]]' '\n' | sort | uniq > $OUTPUT_PATH/depimage.log
+# while IFS= read -r line; do $CLIENT describe deployment $line |grep Image | awk '{print $2}'; done < $OUTPUT_PATH/deploy.log > $OUTPUT_PATH/depimage.log
+# sort $OUTPUT_PATH/depimage.log |uniq|wc -l
+# echo -e "DEPLOYMENT: there is $(cat $OUTPUT_PATH/depimage.log|sort|uniq|wc -l) images referenced by Deployments."
+  echo -e "DEPLOYMENT: there is $(cat $OUTPUT_PATH/depimage.log|sort|uniq|wc -l) images referenced by Deployments."
+}
+
 delete_rs() {
   $CLIENT delete rs $1
 }
 
 imagestreams
 pods
+deployments
 replicasets
 
 
@@ -117,15 +139,7 @@ $CLIENT get jobs -A|wc -l > $OUTPUT_PATH/jobs.log
 
 
 
-$CLIENT get deployment -A|tail -n +2 > $OUTPUT_PATH/deployment.log
-cat $OUTPUT_PATH/deployment.log |awk '{print $2" -n "$1}' > $OUTPUT_PATH/deploy.log
-# while IFS= read -r line; do $CLIENT describe deployment $line |grep Image | awk '{print $2}'; done < deployment.log
 
-$CLIENT get deployment -A -o jsonpath="{..image}" | tr -s '[[:space:]]' '\n' | sort | uniq > $OUTPUT_PATH/depimage.log
-# while IFS= read -r line; do $CLIENT describe deployment $line |grep Image | awk '{print $2}'; done < $OUTPUT_PATH/deploy.log > $OUTPUT_PATH/depimage.log
-# sort $OUTPUT_PATH/depimage.log |uniq|wc -l
-# echo -e "DEPLOYMENT: there is $(cat $OUTPUT_PATH/depimage.log|sort|uniq|wc -l) images referenced by Deployments."
-echo -e "DEPLOYMENT: there is $(cat $OUTPUT_PATH/depimage.log|sort|uniq|wc -l) images referenced by Deployments."
 
 
 
