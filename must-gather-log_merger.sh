@@ -90,7 +90,7 @@ etcd_check() {    #  elected leader
       # cat $member/etcd/etcd/logs/current.log |grep "$TIMELINE"|grep 'took too long'|cut -d ' ' -f1| \
         # xargs -I {} echo -e "{} took too long  [$member]" | while read -r line; do echo -e "${color[$i]}$line$NONE" >> $OUTPUT_PATH/$member.log; done
       cat $member/etcd/etcd/logs/current.log |grep "$TIMELINE"|grep 'leader changed'|cut -d ' ' -f1| \
-        xargs -I {} echo -e "{} took too long due to LEADER changed [$member] !" | while read -r line; do echo -e "${color[$i]}$line$NONE" >> $OUTPUT_PATH/$member.log; done
+        xargs -I {} echo -e "{} took too long due to changed leader [$member] !" | while read -r line; do echo -e "${color[$i]}$line$NONE" >> $OUTPUT_PATH/$member.log; done
       cat $member/etcd/etcd/logs/current.log |grep "$TIMELINE"|grep 'elected leader'|cut -d ' ' -f1| \
         xargs -I {} echo -e "{} LEADER changed [$member] !!" | while read -r line; do echo -e "${color[$i]}$line$NONE" >> $OUTPUT_PATH/$member.log; done
       cat $member/etcd/etcd/logs/current.log |grep "$TIMELINE"|grep 'clock'|cut -d ' ' -f1| \
@@ -106,7 +106,7 @@ etcd_check() {    #  elected leader
     cat $OUTPUT_PATH/sorted.tmp > $OUTPUT_PATH/output_etcd_logs.log
 }
 
-router_check() {
+router_check() {  
     i=0
     
     for router in $(ls); do
@@ -114,13 +114,13 @@ router_check() {
       echo -e "" > $OUTPUT_PATH/$router.log
       cat $router/router/router/logs/current.log |grep "$TIMELINE"|grep 'Unexpected watch close'|cut -d ' ' -f1| \
         xargs -I {} echo -e "{} Unexpected watch close     [$router] !!!" | while read -r line; do echo -e "$YELLOW$line$NONE" >> $OUTPUT_PATH/$router.log; done
-      # cat $member/router/router/logs/current.log |grep "$TIMELINE"|grep 'took too long'|cut -d ' ' -f1| \
-        # xargs -I {} echo -e "{} took too long  [$router]" | while read -r line; do echo -e "${color[$i]}$line$NONE" >> $OUTPUT_PATH/$router.log; done
-      # cat $member/router/router/logs/current.log |grep "$TIMELINE"|grep 'leader'|cut -d ' ' -f1| \
+      cat $router/router/router/logs/current.log |grep "$TIMELINE"|grep 'error on the server'|cut -d ' ' -f1| \
+        xargs -I {} echo -e "{} error on the server  [$router]" | while read -r line; do echo -e "${color[$i]}$line$NONE" >> $OUTPUT_PATH/$router.log; done
+      # cat $router/router/router/logs/current.log |grep "$TIMELINE"|grep 'process'|cut -d ' ' -f1| \
       #   xargs -I {} echo -e "{} LEADER changed [$router] !" | while read -r line; do echo -e "${color[$i]}$line$NONE" >> $OUTPUT_PATH/$router.log; done
-      # cat $member/router/router/logs/current.log |grep "$TIMELINE"|grep 'clock'|cut -d ' ' -f1| \
+      # cat $router/router/router/logs/current.log |grep "$TIMELINE"|grep 'clock'|cut -d ' ' -f1| \
       #   xargs -I {} echo -e "{} NTP clock difference [$router] !!" | while read -r line; do echo -e "${color[$i]}$line$NONE" >> $OUTPUT_PATH/$router.log; done
-      # cat $member/router/router/logs/current.log |grep "$TIMELINE"|grep 'buffer'|cut -d ' ' -f1| \
+      # cat $router/router/router/logs/current.log |grep "$TIMELINE"|grep 'buffer'|cut -d ' ' -f1| \
       #   xargs -I {} echo -e "{} BUFF [$router] !!" | while read -r line; do echo -e "${color[$i]}$line$NONE" >> $OUTPUT_PATH/$router.log; done
       #increment color
       i=$((${i}+1))
