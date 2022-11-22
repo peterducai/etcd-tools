@@ -3,12 +3,15 @@
 echo -e "DRY RUN without paramateters"
 echo -e "Depending on the size of cluster, this script can run from several seconds to several minutes."
 echo -e ""
+echo -e "SUMMARY:"
+echo -e ""
 
 CLIENT="oc"
 
 MUST_PATH=$1
 ORIG_PATH=$(pwd)
 OUTPUT_PATH=$ORIG_PATH/DATA
+OLDER_THAN=20
 
 #rm -rf $OUTPUT_PATH
 mkdir -p $OUTPUT_PATH
@@ -88,7 +91,7 @@ replicasets() {
   echo -e ""
   echo -e "[REPLICASETS]"
   $CLIENT get replicasets -A > $OUTPUT_PATH/rs.log
-  INACTIVE_OLDER_RS=$(cat $OUTPUT_PATH/rs.log |grep  -E '0{1}\s+0{1}\s+0{1}'| awk '($6*3600) > (20*3600) {print "oc describe rs -n " $1, $2, $6 }'|sort -k 7n|uniq|wc -l)
+  cat $OUTPUT_PATH/rs.log |grep  -E '0{1}\s+0{1}\s+0{1}'| awk '($6*3600) > ( $(($OLDER_THAN))*3600 ) {print "oc describe rs -n " $1, $2, $6 }'|sort -k 7n|uniq > $OUTPUT_PATH/rs_inactiv.log
   cat $OUTPUT_PATH/rs.log |grep  -E '0{1}\s+0{1}\s+0{1}'| awk '{print "-n " $1, $2}'|sort|uniq > $OUTPUT_PATH/rs_inactive.log
   #cat rs.log |grep  -E '0{1}\s+0{1}\s+0{1}'| awk '{print "oc describe rs -n " $1, $2, $6, ($6*3600) }'|sort -k 7n|uniq
   $CLIENT get rs -A  -o jsonpath="{..image}" | tr -s '[[:space:]]' '\n' | sort | uniq > $OUTPUT_PATH/rs_images.log
@@ -97,8 +100,9 @@ replicasets() {
   echo -e "REPLICASET: there are $(cat $OUTPUT_PATH/rs_inactive.log|wc -l) INACTIVE ReplicaSets."
   echo -e "REPLICASET: there are $(cat $OUTPUT_PATH/rs_images.log|wc -l) images referenced by ReplicaSets."
   echo -e ""
-  echo -e "There are $INACTIVE_OLDER_RS replicasets older than 20 days"
+  echo -e "There are $(cat $OUTPUT_PATH/rs_inactiv.log|wc -l) replicasets older than 20 days"
   echo -e ""
+
   # cat $OUTPUT_PATH/rs.log |grep  -E '0{1}\s+0{1}\s+0{1}'| awk '($6*3600) > (20*3600) {print "oc describe rs -n " $1, $2, $6 }'|sort -k 7n|uniq
 }
 
@@ -107,7 +111,7 @@ deployments() {
   echo -e "[DEPLOYMENTS]"
   $CLIENT get deployment -A|tail -n +2 > $OUTPUT_PATH/deployment.log
   echo -e "DEPLOYMENT: There is $(cat $OUTPUT_PATH/deployment.log|wc -l) deployments."
-  INACTIVE_OLDER_DEP=$(cat $OUTPUT_PATH/deployment.log |grep  -E '0{1}\s+0{1}\s+0{1}'| awk '($6*3600) > (20*3600) {print "oc describe rs -n " $1, $2, $6 }'|sort -k 7n|uniq|wc -l)
+  cat $OUTPUT_PATH/deployment.log |grep  -E '0{1}\s+0{1}\s'| awk '($6*3600) > ( $(($OLDER_THAN))*3600 ) {print "oc describe deploy -n " $1, $2, $6 }'|sort -k 7n|uniq > $OUTPUT_PATH/dep_inactiv.log
   cat $OUTPUT_PATH/deployment.log |awk '{print $2" -n "$1}' > $OUTPUT_PATH/deploy.log
 # while IFS= read -r line; do $CLIENT describe deployment $line |grep Image | awk '{print $2}'; done < deployment.log
 
@@ -115,7 +119,7 @@ deployments() {
   echo -e "DEPLOYMENT: there is $(cat $OUTPUT_PATH/depimage.log|sort|uniq|wc -l) images referenced by Deployments."
   
   echo -e ""
-  echo -e "There are $INACTIVE_OLDER_DEP deployments older than 20 days"
+  echo -e "There are $(cat $OUTPUT_PATH/dep_inactiv.log|wc -l) deployments older than 20 days"
   echo -e ""
 }
 
@@ -130,13 +134,28 @@ delete_rs() {
   $CLIENT delete rs $1
 }
 
+list_all() {
+  echo -e ""
+  echo -e "DEPLOYMENT LIST:"
+  echo -e "------------------------------------------------"
+  echo -e "$(cat $OUTPUT_PATH/dep_inactiv.log)"
+  echo -e ""
+  echo -e ""
+  echo -e "RS LIST:"
+  echo -e "------------------------------------------------"
+  echo -e "$(cat $OUTPUT_PATH/rs_inactiv.log)"
+  echo -e ""
+}
+
+
+
 imagestreams
 pods
 deployments
 replicasets
 jobs
 
-
+list_all
 
 
 # echo -e "diffing.."
