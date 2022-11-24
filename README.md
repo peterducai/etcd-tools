@@ -17,7 +17,7 @@ PS: false parameter is to disable gnuplot use
 
 will combine logs from ETCD, haproxy, router, apiserver into one timeline printing only errors/warnings.
 
-> ./must-gather-log_merger.sh <full path to MUST-GATHER>
+> ./must-gather-log_merger.sh -m <full path to MUST-GATHER>
 
 ## etcd-analyzer.sh
 
@@ -27,6 +27,15 @@ do
 > ./etcd-analyzer.sh
 
 and it will print summary of warnings, size of ETCD and number of objects.
+
+## cleanup-analyzer.sh
+
+do 
+
+> oc login
+> ./cleanup-analyzer.sh
+
+and it will print number of deployments, replicasets and how many of them are inactive and could be cleaned up.
 
 ## fio_suite
 
