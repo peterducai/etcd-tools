@@ -55,9 +55,9 @@ For excessive number of events it's not enough to delete them, but rather it sho
 
 By default, there are actually three namespaces that Kubernetes ships with: default, kube-system (used for Kubernetes components), and kube-public (used for public resources). kube-public isn’t really used for much right now, and it’s usually a good idea to leave kube-system alone. On Openshift we have several openshift- namespaces used for cluster components.
 
-This leaves the default Namespace as the place where your services and apps are created.
+This leaves the *default* Namespace as the place where your services and apps are created.
 
-There is absolutely nothing special about this Namespace, except that the Kubernetes tooling is set up out of the box to use this namespace and you can’t delete it. While it is great for getting started and for smaller production systems, it is recommended against using it in large production systems. This is because it is very easy for a team to accidentally overwrite or disrupt another service without even realizing it. Instead, create multiple namespaces and use them to segment your services into manageable chunks.
+This Namespace is set up out of the box that you can’t delete it. While it is great for getting started and for smaller production systems, it is recommended against using it in large production systems. This is because it is very easy for a team to accidentally overwrite or disrupt another service without even realizing it. Instead, create multiple namespaces and use them to segment your services into manageable chunks.
 
 Creating many NS don’t add a performance penalty, and in many cases can actually improve performance as the Kubernetes API will have a smaller set of objects to work with.
 
@@ -78,7 +78,7 @@ Services in Kubernetes expose their endpoint using a common DNS pattern. It look
 
 ## Pods
 
-Don't use naked Pods (that is, Pods not bound to a ReplicaSet or Deployment) if you can avoid it. 
+Don't use naked Pods (that is, Pods not bound to a ReplicaSet or Deployment) if you can avoid it. Re-evaluate if pod doesn't use too many secrets or secrets too big (like certificates).
 
 ## Readiness and Liveness Probes
 
