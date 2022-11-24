@@ -221,7 +221,7 @@ pods
 deployments
 replicasets
 jobs
-list_all
+#list_all
 diffing
 
 echo -e "Done"
