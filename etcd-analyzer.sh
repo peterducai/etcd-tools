@@ -1,8 +1,40 @@
-#/bin/bash
+#!/bin/bash
+
+################################################################################
+#                               ETCD Analyzer                                  #
+#                                                                              #
+# Script to analyze performance of ETCD on live cluster                        #
+#                                                                              #
+#                                                                              #
+################################################################################
+################################################################################
+################################################################################
+#                                                                              #
+#  Copyright (C) 2022 Peter Ducai                                              #
+#  peter.ducai@gmail.com                                                       #
+#  pducai@icloud.com                                                           #
+#                                                                              #
+#  This program is free software; you can redistribute it and/or modify        #
+#  it under the terms of the GNU General Public License as published by        #
+#  the Free Software Foundation; either version 2 of the License, or           #
+#  (at your option) any later version.                                         #
+#                                                                              #
+#  This program is distributed in the hope that it will be useful,             #
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+#  GNU General Public License for more details.                                #
+#                                                                              #
+#  You should have received a copy of the GNU General Public License           #
+#  along with this program; if not, write to the Free Software                 #
+#  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA   #
+#                                                                              #
+################################################################################
+################################################################################
+################################################################################
 
 STAMP=$(date +%Y-%m-%d_%H-%M-%S)
 CLIENT="oc"
-ETCD_NS='openshift-etcd'
+ETCDNS='openshift-etcd'
 MUST_PATH=$1
 ORIG_PATH=$(pwd)
 OUTPUT_PATH=$ORIG_PATH/DATA
@@ -24,6 +56,7 @@ while (( "$#" )); do
   case "$1" in
     -k|--kubectl)
       CLIENT="kubectl"
+      ETCDNS="kube-system"
       shift
       ;;
     -*|--*=) # unsupported flags
@@ -45,101 +78,71 @@ eval set -- "$PARAMS"
 
 
 MASTERS=$($CLIENT get nodes |grep master|cut -d ' ' -f1)
-ETCD=( $($CLIENT --as system:admin -n openshift-etcd get -l k8s-app=etcd pods -o name | tr -s '\n' ' ' | sed 's/pod\///g' ) )
+ETCD=( $($CLIENT --as system:admin -n $ETCDNS get -l k8s-app=etcd pods -o name | tr -s '\n' ' ' | sed 's/pod\///g' ) )
 API=$( oc config view --minify -o jsonpath='{.clusters[*].cluster.server}' )
 echo -e "API URL: $API"
 
-echo -e ""
-echo -e "-[${ETCD[0]}]--------------------"
 
-echo -e ""
-$CLIENT exec -n openshift-etcd ${ETCD[0]} -c etcdctl -- etcdctl endpoint status -w table
-echo -e "IPs:"
-for i in $($CLIENT exec ${ETCD[0]} -c etcd -n openshift-etcd -- ls /sys/class/net|grep -v veth|grep -v lo); do echo $i && oc exec -n openshift-etcd ${ETCD[0]} -c etcd -- ip a s|grep inet|grep -v inet6|grep -v '127.'|head -2; done
-echo -e "Errors and dropped packets:"
-for i in $($CLIENT exec ${ETCD[0]} -c etcd -n openshift-etcd -- ls /sys/class/net|grep -v veth|grep -v lo); do oc exec -n openshift-etcd ${ETCD[0]} -c etcd -- ip -s link show dev $i; done
-echo -e ""
-echo -e "Latency against API is $(curl -sk $API -w "%{time_connect}\n"|tail -1)"
-echo -e ""
-echo -e "LOGS \nstart on $($CLIENT logs ${ETCD[0]} -c etcd -n openshift-etcd|head -60|tail -1|cut -d ':' -f3|cut -c 2-14)"
-echo -e "ends on $($CLIENT logs ${ETCD[0]} -c etcd -n openshift-etcd|tail -1|cut -d ':' -f3|cut -c 2-14)"
-echo -e ""
-echo -e "Found $($CLIENT logs ${ETCD[0]} -c etcd -n openshift-etcd|grep overloaded|wc -l) overloaded messages"
-echo -e "Found $($CLIENT logs ${ETCD[0]} -c etcd -n openshift-etcd|grep 'took too long'|wc -l) took too long messages"
-echo -e "Found $($CLIENT logs ${ETCD[0]} -c etcd -n openshift-etcd|grep 'slow fdatasync'|wc -l) slow fdatasync messages"
-echo -e "Found $($CLIENT logs ${ETCD[0]} -c etcd -n openshift-etcd|grep clock|wc -l) clock difference messages"
-echo -e "Found $($CLIENT logs ${ETCD[0]} -c etcd -n openshift-etcd|grep heartbeat|wc -l) heartbeat messages"
-echo -e "Found $($CLIENT logs ${ETCD[0]} -c etcd -n openshift-etcd|grep 'database space exceeded'|wc -l) database space exceeded messages"
-echo -e "Found $($CLIENT logs ${ETCD[0]} -c etcd -n openshift-etcd|grep 'leader changed'|wc -l) took too long due to leader changed messages"
-echo -e "Found $($CLIENT logs ${ETCD[0]} -c etcd -n openshift-etcd|grep 'elected leader'|wc -l) leader changed messages"
-echo -e ""
-echo -e "COMPACTION: \n$($CLIENT logs ${ETCD[0]} -c etcd -n openshift-etcd|grep compaction|tail -8|cut -d ':' -f10|cut -c 2-12)"
-echo -e ""
-echo -e "-[${ETCD[1]}]--------------------"
-echo -e ""
-$CLIENT exec -n openshift-etcd ${ETCD[1]} -c etcdctl -- etcdctl endpoint status -w table
-echo -e ""
-echo -e "IPs:"
-for i in $($CLIENT exec ${ETCD[1]} -c etcd -n openshift-etcd -- ls /sys/class/net|grep -v veth|grep -v lo); do echo $i && oc exec -n openshift-etcd ${ETCD[1]} -c etcd -- ip a s|grep inet|grep -v inet6|grep -v '127.'|head -2; done
-echo -e "Errors and dropped packets:"
-for i in $($CLIENT exec ${ETCD[1]} -c etcd -n openshift-etcd -- ls /sys/class/net|grep -v veth|grep -v lo); do oc exec -n openshift-etcd ${ETCD[1]} -c etcd -- ip -s link show dev $i; done
-echo -e ""
-echo -e "Latency against API is $(curl -sk $API -w "%{time_connect}\n"|tail -1)"
-echo -e ""
-echo -e "LOGS \nstart on $($CLIENT logs ${ETCD[1]} -c etcd -n openshift-etcd|head -60|tail -1|cut -d ':' -f3|cut -c 2-14)"
-echo -e "ends on $($CLIENT logs ${ETCD[1]} -c etcd -n openshift-etcd|tail -1|cut -d ':' -f3|cut -c 2-14)"
-echo -e ""
-echo -e "Found $($CLIENT logs ${ETCD[1]} -c etcd -n openshift-etcd|grep overloaded|wc -l) overloaded messages"
-echo -e "Found $($CLIENT logs ${ETCD[1]} -c etcd -n openshift-etcd|grep 'took too long'|wc -l) took too long messages"
-echo -e "Found $($CLIENT logs ${ETCD[0]} -c etcd -n openshift-etcd|grep 'slow fdatasync'|wc -l) slow fdatasync messages"
-echo -e "Found $($CLIENT logs ${ETCD[1]} -c etcd -n openshift-etcd|grep clock|wc -l) clock difference messages"
-echo -e "Found $($CLIENT logs ${ETCD[1]} -c etcd -n openshift-etcd|grep heartbeat|wc -l) heartbeat messages"
-echo -e "Found $($CLIENT logs ${ETCD[1]} -c etcd -n openshift-etcd|grep 'database space exceeded'|wc -l) database space exceeded messages"
-echo -e "Found $($CLIENT logs ${ETCD[1]} -c etcd -n openshift-etcd|grep 'leader changed'|wc -l) leader changed messages"
-echo -e ""
-echo -e "COMPACTION: \n$($CLIENT logs ${ETCD[1]} -c etcd -n openshift-etcd|grep compaction|tail -8|cut -d ':' -f10|cut -c 2-12)"
-echo -e ""
-echo -e "-[ ${ETCD[2]}]--------------------"
-echo -e ""
-$CLIENT exec -n openshift-etcd ${ETCD[2]} -c etcdctl -n openshift-etcd -- etcdctl endpoint status -w table
-echo -e ""
-echo -e "IPs:"
-for i in $($CLIENT exec ${ETCD[2]} -c etcd -n openshift-etcd -- ls /sys/class/net|grep -v veth|grep -v lo); do echo $i && oc exec -n openshift-etcd ${ETCD[2]} -c etcd -- ip a s|grep inet|grep -v inet6|grep -v '127.'|head -2; done
-echo -e "Errors and dropped packets:"
-for i in $($CLIENT exec ${ETCD[2]} -c etcd -n openshift-etcd -- ls /sys/class/net|grep -v veth|grep -v lo); do oc exec -n openshift-etcd ${ETCD[2]} -c etcd -- ip -s link show dev $i; done
-echo -e ""
-echo -e "Latency against API is $(curl -sk $API -w "%{time_connect}\n"|tail -1)"
-echo -e ""
-echo -e "LOGS \nstart on $($CLIENT logs ${ETCD[2]} -c etcd -n openshift-etcd|head -60|tail -1|cut -d ':' -f3|cut -c 2-14)"
-echo -e "ends on $($CLIENT logs ${ETCD[2]} -c etcd -n openshift-etcd|tail -1|cut -d ':' -f3|cut -c 2-14)"
-echo -e ""
-echo -e "Found $($CLIENT logs ${ETCD[2]} -c etcd -n openshift-etcd|grep overloaded|wc -l) overloaded messages"
-echo -e "Found $($CLIENT logs ${ETCD[2]} -c etcd -n openshift-etcd|grep 'took too long'|wc -l) took too long messages"
-echo -e "Found $($CLIENT logs ${ETCD[0]} -c etcd -n openshift-etcd|grep 'slow fdatasync'|wc -l) slow fdatasync messages"
-echo -e "Found $($CLIENT logs ${ETCD[2]} -c etcd -n openshift-etcd|grep clock|wc -l) clock difference messages"
-echo -e "Found $($CLIENT logs ${ETCD[2]} -c etcd -n openshift-etcd|grep heartbeat|wc -l) heartbeat messages"
-echo -e "Found $($CLIENT logs ${ETCD[2]} -c etcd -n openshift-etcd|grep 'database space exceeded'|wc -l) database space exceeded messages"
-echo -e "Found $($CLIENT logs ${ETCD[2]} -c etcd -n openshift-etcd|grep 'leader changed'|wc -l) leader changed messages"
-echo -e ""
-echo -e "COMPACTION: \n$($CLIENT logs ${ETCD[2]} -c etcd -n openshift-etcd|grep compaction|tail -8|cut -d ':' -f10|cut -c 2-12)"
-echo -e ""
+
+
+analyze_members() {
+  for i in $ETCD; do
+    echo -e ""
+    echo -e "-[$i]--------------------"
+    
+    echo -e ""
+    $CLIENT exec -n $ETCDNS $i -c etcdctl -- etcdctl endpoint status -w table
+    echo -e "IPs:"
+    for j in $($CLIENT exec $i -c etcd -n $ETCDNS -- ls /sys/class/net|grep -v veth|grep -v lo); do echo $j && oc exec -n $ETCDNS $i -c etcd -- ip a s|grep inet|grep -v inet6|grep -v '127.'|head -2; done
+    echo -e "Errors and dropped packets:"
+    for j in $($CLIENT exec $i -c etcd -n $ETCDNS -- ls /sys/class/net|grep -v veth|grep -v lo); do oc exec -n $ETCDNS $i -c etcd -- ip -s link show dev $j; done
+    echo -e ""
+    echo -e "Latency against API is $(curl -sk $API -w "%{time_connect}\n"|tail -1) .  Should be close to 0.002 (2ms) and no more than 0.008 (8ms)."
+    echo -e ""
+    echo -e "LOGS \nstart on $($CLIENT logs $i -c etcd -n $ETCDNS|head -60|tail -1|cut -d ':' -f3|cut -c 2-14)"
+    echo -e "ends on $($CLIENT logs $i -c etcd -n $ETCDNS|tail -1|cut -d ':' -f3|cut -c 2-14)"
+    echo -e ""
+    echo -e "Found $($CLIENT logs $i -c etcd -n $ETCDNS|grep overloaded|wc -l) overloaded messages"
+    echo -e "Found $($CLIENT logs $i -c etcd -n $ETCDNS|grep 'took too long'|wc -l) took too long messages"
+    echo -e "Found $($CLIENT logs $i -c etcd -n $ETCDNS|grep 'slow fdatasync'|wc -l) slow fdatasync messages"
+    echo -e "Found $($CLIENT logs $i -c etcd -n $ETCDNS|grep clock|wc -l) clock difference messages"
+    echo -e "Found $($CLIENT logs $i -c etcd -n $ETCDNS|grep heartbeat|wc -l) heartbeat messages"
+    echo -e "Found $($CLIENT logs $i -c etcd -n $ETCDNS|grep 'database space exceeded'|wc -l) database space exceeded messages"
+    echo -e "Found $($CLIENT logs $i -c etcd -n $ETCDNS|grep 'leader changed'|wc -l) took too long due to leader changed messages"
+    echo -e "Found $($CLIENT logs $i -c etcd -n $ETCDNS|grep 'elected leader'|wc -l) leader changed messages"
+    echo -e ""
+    echo -e "COMPACTION: \n$($CLIENT logs $i -c etcd -n $ETCDNS|grep compaction|tail -8|cut -d ':' -f10|cut -c 2-12)"
+    echo -e ""
+    echo -e "---------------------"
+    echo -e ""
+  done
+  
+}
+
+analyze_members
+
+
+
+
 
 echo -e ""
 echo -e "[NUMBER OF OBJECTS IN ETCD]"
 echo -e ""
-$CLIENT exec -n openshift-etcd ${ETCD[0]} -c etcdctl -n openshift-etcd -- etcdctl get / --prefix --keys-only | sed '/^$/d' | cut -d/ -f3 | sort | uniq -c | sort -rn|head -14
+$CLIENT exec -n $ETCDNS $i -c etcdctl -n $ETCDNS -- etcdctl get / --prefix --keys-only | sed '/^$/d' | cut -d/ -f3 | sort | uniq -c | sort -rn|head -14
 echo -e ""
 
-echo -e "[BIGGEST CONSUMERS]"
+echo -e "[BIGGEST CONSUMERS keys]"
 echo -e ""
-$CLIENT exec -n openshift-etcd ${ETCD[0]} -c etcdctl -n openshift-etcd -- etcdctl get / --prefix --keys-only > keysonly.txt
+$CLIENT exec -n $ETCDNS $i -c etcdctl -n $ETCDNS -- etcdctl get / --prefix --keys-only > keysonly.txt
 cat keysonly.txt | grep event |cut -d/ -f3,4| sort | uniq -c | sort -n --rev |head -10
 echo -e "..."
 cat keysonly.txt | grep event |cut -d/ -f3,4,5| sort | uniq -c | sort -n --rev |head -10
 
-# oc exec ${ETCD[0]}  -c etcdctl -n openshift-etcd --  etcdctl watch / --prefix  --write-out=fields > fields.txt
+# oc exec $i  -c etcdctl -n $ETCDNS --  etcdctl watch / --prefix  --write-out=fields > fields.txt
 
-
+if [ $CLIENT == "kubectl" ]; then
+  return
+fi
 
 echo -e ""
 echo -e "[API CONSUMERS kube-apiserver on masters]"
@@ -201,7 +204,7 @@ done;
 #   $ oc debug node/<master_node>
 #   [...]
 #   sh-4.4# chroot /host bash
-#   podman run --privileged --volume /var/lib/etcd:/test quay.io/peterducai/openshift-etcd-suite:latest fio
+#   podman run --privileged --volume /var/lib/etcd:/test quay.io/peterducai/$ETCDNS-suite:latest fio
 
 
     # $ oc debug node/<master_node>
@@ -209,7 +212,7 @@ done;
     # sh-4.4# chroot /host bash
     # [root@<master_node> /]# podman run --volume /var/lib/etcd:/var/lib/etcd:Z quay.io/openshift-scale/etcd-perf
 
-# $CLIENT exec ${ETCD[0]}  -c etcdctl -n $ETCD_NS --  etcdctl watch / --prefix  --write-out=fields > fields.txt
+# $CLIENT exec $i  -c etcdctl -n $ETCD_NS --  etcdctl watch / --prefix  --write-out=fields > fields.txt
 
 
 
@@ -226,7 +229,7 @@ done;
 #   $ $CLIENT debug node/<master_node>
 #   [...]
 #   sh-4.4# chroot /host bash
-#   podman run --privileged --volume /var/lib/etcd:/test quay.io/peterducai/openshift-etcd-suite:latest fio
+#   podman run --privileged --volume /var/lib/etcd:/test quay.io/peterducai/$ETCDNS-suite:latest fio
 
 
     # $ $CLIENT debug node/<master_node>
