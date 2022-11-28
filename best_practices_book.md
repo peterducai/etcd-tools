@@ -65,6 +65,24 @@ ETCD hosted on average storage will usually have performance problems when there
 
 For excessive number of events it's not enough to delete them, but rather it should be identified which pod/operator/pipeline is producing those events. Also, creating and deleting too many objects in short time can lead to compaction being triggered too often and this also could have effect on overall performance of ETCD.
 
+### Images
+
+Huge number of images could not have only effect on ETCD performance, but also registry performance. Searching for or listing images could take several seconds if there's more than 10-15k images.
+
+Be aware that images are referenced also in Deployments and Replicasets and huge number of unused revisions of those (deployments and replicasets) could mean you will be left with huge number of images that won't be deleted when pruning.
+
+### When to use a ReplicaSet and Deployment
+
+A ReplicaSet ensures that a specified number of pod replicas are running at any given time. However, a Deployment is a higher-level concept that manages ReplicaSets and provides declarative updates to Pods along with a lot of other useful features. Therefore, we recommend using Deployments instead of directly using ReplicaSets, unless you require custom update orchestration or don't require updates at all.
+
+This actually means that you may never need to manipulate ReplicaSet objects use a Deployment instead, and define your application in the spec section.
+
+### Deployments and Replicasets
+
+.spec.revisionHistoryLimit is an optional field that specifies the number of old ReplicaSets to retain to allow rollback. These old ReplicaSets consume resources in etcd and crowd the output of oc get rs. The configuration of each Deployment revision is stored in its ReplicaSets; therefore, once an old ReplicaSet is deleted, you lose the ability to rollback to that revision of Deployment. By default, 10 old ReplicaSets will be kept, however its ideal value depends on the frequency and stability of new Deployments.
+
+This means, that with 2000 deployments you could create up to 20k replicasets and this could have huge performance impact on ETCD.
+
 ## Namespaces
 
 By default, there are actually three namespaces that Kubernetes ships with: default, kube-system (used for Kubernetes components), and kube-public (used for public resources). kube-public isn’t really used for much right now, and it’s usually a good idea to leave kube-system alone. On Openshift we have several openshift- namespaces used for cluster components.
@@ -84,7 +102,7 @@ Namespaces should not be created at will by anyone in the organization. Allowing
 ### Cross Namespace communication
 
 Namespaces are “hidden” from each other, but they are not fully isolated by default. A service in one Namespace can talk to a service in another Namespace. This can often be very useful, for example to have your team’s service in your Namespace communicate with another team’s service in another Namespace.
-When your app wants to access a Kubernetes sService, you can use the built-in DNS service discovery and just point your app at the Service’s name. However, you can create a service with the same name in multiple Namespaces! Thankfully, it’s easy to get around this by using the expanded form of the DNS address.
+When your app wants to access a Kubernetes Service, you can use the built-in DNS service discovery and just point your app at the Service’s name. However, you can create a service with the same name in multiple Namespaces! Thankfully, it’s easy to get around this by using the expanded form of the DNS address.
 
 Services in Kubernetes expose their endpoint using a common DNS pattern. It looks like this:
 
@@ -127,23 +145,7 @@ You can solve this through the application of resource quotas. If you run the af
 
 You should always set up containers with resource limits. In the event of a denial of service attack, or even just a burst of very high load on a service, these resource limits will prevent pods from using all available resources in the node they are running on.
 
-## Images
 
-Huge number of images could not have only effect on ETCD performance, but also registry performance. Searching for or listing images could take several seconds if there's more than 10-15k images.
-
-Be aware that images are referenced also in Deployments and Replicasets and huge number of unused revisions of those (deployments and replicasets) could mean you will be left with huge number of images that won't be deleted when pruning.
-
-## When to use a ReplicaSet and Deployment
-
-A ReplicaSet ensures that a specified number of pod replicas are running at any given time. However, a Deployment is a higher-level concept that manages ReplicaSets and provides declarative updates to Pods along with a lot of other useful features. Therefore, we recommend using Deployments instead of directly using ReplicaSets, unless you require custom update orchestration or don't require updates at all.
-
-This actually means that you may never need to manipulate ReplicaSet objects use a Deployment instead, and define your application in the spec section.
-
-## Deployments and Replicasets
-
-.spec.revisionHistoryLimit is an optional field that specifies the number of old ReplicaSets to retain to allow rollback. These old ReplicaSets consume resources in etcd and crowd the output of oc get rs. The configuration of each Deployment revision is stored in its ReplicaSets; therefore, once an old ReplicaSet is deleted, you lose the ability to rollback to that revision of Deployment. By default, 10 old ReplicaSets will be kept, however its ideal value depends on the frequency and stability of new Deployments.
-
-This means, that with 2000 deployments you could create up to 20k replicasets and this could have huge performance impact on ETCD.
 
 ## Operators 
 
@@ -203,5 +205,7 @@ It is very important to clean up unused resources that could be referencing othe
 ## Other references
 
 [Delete ETCD events](https://access.redhat.com/solutions/6171352)
+
 [9 Best Practices for Deploying Highly Available Applications to OpenShift](https://cloud.redhat.com/blog/9-best-practices-for-deploying-highly-available-applications-to-openshift)
+
 [14 Best Practices for Developing Applications on OpenShift](https://cloud.redhat.com/blog/14-best-practices-for-developing-applications-on-openshift)

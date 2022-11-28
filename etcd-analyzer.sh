@@ -46,7 +46,7 @@ mkdir -p $OUTPUT_PATH
 
 print_help() {
   echo -e "HELP:"
-  echo -e "-k | --kubectl : use kubectl instead of oc (not supported)"
+  echo -e "-k | --kubectl : use kubectl instead of oc (experimental)"
   echo -e "-h | --help : print this help"
   echo -e ""
 }
@@ -154,7 +154,7 @@ for i in $AUDIT_LOGS; do
   if [[ $i == *".log"* ]]; then
     oc adm node-logs $node --path=kube-apiserver/$i > $OUTPUT_PATH/$(echo $i|cut -d ' ' -f2)
     cat $OUTPUT_PATH/$(echo $i|cut -d ' ' -f2) |jq '.user.username' -r > $OUTPUT_PATH/$(echo $i|cut -d ' ' -f2).username
-    sort $OUTPUT_PATH/$(echo $i|cut -d ' ' -f2).username | uniq -c | sort -bgr|head -10
+    sort $OUTPUT_PATH/$(echo $i|cut -d ' ' -f2).username | uniq -c | sort -bgr|head -5
     echo -e ""
   else
     node=$i
@@ -165,6 +165,10 @@ done;
 
 
 
+echo -e ""
+echo -e "-------------------------------------------------------------------------------"
+echo -e ""
+echo -e ""
 echo -e "[API CONSUMERS openshift-apiserver on masters]"
 echo -e ""
 AUDIT_LOGS=$(oc adm node-logs --role=master --path=openshift-apiserver|grep audit-)
@@ -174,7 +178,7 @@ for i in $AUDIT_LOGS; do
   if [[ $i == *".log"* ]]; then
     oc adm node-logs $node --path=openshift-apiserver/$i > $OUTPUT_PATH/$(echo $i|cut -d ' ' -f2)
     cat $OUTPUT_PATH/$(echo $i|cut -d ' ' -f2) |jq '.user.username' -r > $OUTPUT_PATH/$(echo $i|cut -d ' ' -f2).username
-    sort $OUTPUT_PATH/$(echo $i|cut -d ' ' -f2).username | uniq -c | sort -bgr |head -10
+    sort $OUTPUT_PATH/$(echo $i|cut -d ' ' -f2).username | uniq -c | sort -bgr |head -5
     echo -e ""
   else
     node=$i
