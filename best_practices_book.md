@@ -2,7 +2,7 @@
 
 ## Importance of masters and ETCD
 
-ETCD which is running on masters is key-value database that holds all data and objects of cluster. Any performance issues (timeouts, delays) can lead to unstable cluster as all components are talking to ETCD (thru apiserver).
+ETCD (which is running on masters) is key-value database that holds all data and objects of cluster. Any performance issues (timeouts, delays) can lead to unstable cluster as all components are talking to ETCD thru kube-apiserver.
 
 It is common mistake to check only 'etcdctl endpoint health', where status 'healthy' means that etcd member is running, but doesn't tell us actually anything about its performance and could lead us to false impression that everything is fine.
 
@@ -15,7 +15,21 @@ If you plan to run extra large clusters with 100+ workers, you should make sure 
 
 ### Storage
 
+Storage should have generally:
+
+* Low latency for quick reads
+* High bandwidth write for faster compactions/defrag
+* High bandwidth read for quicker recovery on failure
+
+Spinning disks and network drives (like NFS) are highly discouraged (mainly due to high or too variable latency).
+
 For Three-Node OpenShift Compact Clusters, make sure that you have dedicated NVMe or SSD drives for the control plane and separated Drives for application and another infrastructure stacks. Eventually, according to current workload in place, dedicated SSD drives for etcd (/var/lib/etcd) must be also taken in consideration.
+
+
+### CPU and RAM
+
+It's never good idea to have minimum resources (like 4 CPUs). You should add more CPU and RAM according to the size of the cluster and workload running there. 
+
 
 ### ETCD network considerations
 
@@ -127,7 +141,7 @@ This actually means that you may never need to manipulate ReplicaSet objects use
 
 ## Deployments and Replicasets
 
-.spec.revisionHistoryLimit is an optional field that specifies the number of old ReplicaSets to retain to allow rollback. These old ReplicaSets consume resources in etcd and crowd the output of kubectl get rs. The configuration of each Deployment revision is stored in its ReplicaSets; therefore, once an old ReplicaSet is deleted, you lose the ability to rollback to that revision of Deployment. By default, 10 old ReplicaSets will be kept, however its ideal value depends on the frequency and stability of new Deployments.
+.spec.revisionHistoryLimit is an optional field that specifies the number of old ReplicaSets to retain to allow rollback. These old ReplicaSets consume resources in etcd and crowd the output of oc get rs. The configuration of each Deployment revision is stored in its ReplicaSets; therefore, once an old ReplicaSet is deleted, you lose the ability to rollback to that revision of Deployment. By default, 10 old ReplicaSets will be kept, however its ideal value depends on the frequency and stability of new Deployments.
 
 This means, that with 2000 deployments you could create up to 20k replicasets and this could have huge performance impact on ETCD.
 
