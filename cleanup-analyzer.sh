@@ -88,7 +88,6 @@ eval set -- "$PARAMS"
 # FUNCTIONS
 
 print_help() {
-  echo -e "DRY RUN without paramateters"
   echo -e "Depending on the size of cluster, this script can run from several seconds to several minutes."
   echo -e ""
   echo -e $STAMP
