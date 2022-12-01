@@ -1,4 +1,6 @@
-# Best practices for Openshift
+# Best practices for Openshift/Kubernetes
+
+As developers usually don't have administration knowledge of Kubebernetes/Openshift, they might unknowingly put extra stress on the cluster simply by not cleaning up unused resources or by running specific operators. These best practices will not help only with performance and stability of cluster, but also explain how to identify abandoned or very huge resources.
 
 ## Importance of masters and ETCD
 
@@ -7,13 +9,13 @@ ETCD (which is running on masters) is key-value database that holds all data and
 It is common mistake to check only 'etcdctl endpoint health', where status 'healthy' means that etcd member is running, but doesn't tell us actually anything about its performance and could lead us to false impression that everything is fine.
 
 
-### Master count
+## Master count
 
 On Openshift, only 3 masters are supported and it was confirmed that higher number of masters will not help with performance (as it makes synchronization and network latency even more slow).
 
 If you plan to run extra large clusters with 100+ workers, you should make sure you use best performant storage for masters.
 
-### Storage
+## Storage
 
 Storage should have generally:
 
@@ -21,17 +23,17 @@ Storage should have generally:
 * High bandwidth write for faster compactions/defrag
 * High bandwidth read for quicker recovery on failure
 
-Spinning disks and network drives (like NFS) are highly discouraged (mainly due to high or too variable latency).
+Spinning disks and network drives (like NFS) are highly discouraged mainly due to high or too variable latency.
 
 For Three-Node OpenShift Compact Clusters, make sure that you have dedicated NVMe or SSD drives for the control plane and separated Drives for application and another infrastructure stacks. Eventually, according to current workload in place, dedicated SSD drives for etcd (/var/lib/etcd) must be also taken in consideration.
 
 
-### CPU and RAM
+## CPU and RAM
 
 It's never good idea to have minimum resources (like 4 CPUs). You should add more CPU and RAM according to the size of the cluster and workload running there. 
 
 
-### ETCD network considerations
+## Network considerations
 
 Network can handle enough IO and bandwidth between masters is fast enough. Having masters in different DCs is not recommended (as rather [RHACM](https://www.redhat.com/en/technologies/management/advanced-cluster-management) should be used in case of OCP), but if required, network latency should be ideally below 2ms.
 
@@ -91,9 +93,9 @@ This leaves the *default* Namespace as the place where your services and apps ar
 
 This Namespace is set up out of the box that you can’t delete it. While it is great for getting started and for smaller production systems, it is recommended against using it in large production systems. This is because it is very easy for a team to accidentally overwrite or disrupt another service without even realizing it. Instead, create multiple namespaces and use them to segment your services into manageable chunks.
 
-Creating many NS don’t add a performance penalty, and in many cases can actually improve performance as the Kubernetes API will have a smaller set of objects to work with.
+Creating many NS don’t add a performance penalty, and in many cases can actually **improve performance as the Kubernetes API will have a smaller set of objects to work with.**
 
-Do not overload namespaces with multiple workloads that perform unrelated tasks. Keep your namespaces precise and straightforward.
+Do not overload namespaces with multiple workloads that perform unrelated tasks. Keep your namespaces clean and straightforward.
 
 ### Security
 
@@ -159,11 +161,8 @@ Main concern should be what is operator doing and what overhead it brings. Opera
 
 ### Where does Operator run?
 
-If Operator runs also on masters (virus or file scanner), it could have performance impact on master's storage (and therefor impact on ETCD).
+If Operator runs also on masters (virus, file or compliance scanner), it could have performance impact on master's storage (and therefor impact on ETCD).
 
-### How often Operator calls API?
-
-Operator that is calling API server very often (collecting statistics or orchestrating CRDs) could have impact on apiserver CPU usage, which could in turn affect also ETCD.
 
 
 ## Pipelines

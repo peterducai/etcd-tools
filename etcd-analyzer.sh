@@ -131,12 +131,12 @@ echo -e ""
 $CLIENT exec -n $ETCDNS $i -c etcdctl -n $ETCDNS -- etcdctl get / --prefix --keys-only | sed '/^$/d' | cut -d/ -f3 | sort | uniq -c | sort -rn|head -14
 echo -e ""
 
-echo -e "[BIGGEST CONSUMERS keys]"
+echo -e "[MOST EVENTS keys]"
 echo -e ""
 $CLIENT exec -n $ETCDNS $i -c etcdctl -n $ETCDNS -- etcdctl get / --prefix --keys-only > keysonly.txt
-cat keysonly.txt | grep event |cut -d/ -f3,4| sort | uniq -c | sort -n --rev |head -10
+cat keysonly.txt|grep event  |cut -d/ -f3,4| sort | uniq -c | sort -n --rev| head -10
 echo -e "..."
-cat keysonly.txt | grep event |cut -d/ -f3,4,5| sort | uniq -c | sort -n --rev |head -10
+#cat keysonly.txt | grep event |cut -d/ -f3,4,5| sort | uniq -c | sort -n --rev |head -10
 
 # oc exec $i  -c etcdctl -n $ETCDNS --  etcdctl watch / --prefix  --write-out=fields > fields.txt
 
