@@ -143,12 +143,14 @@ replicasets() {
   cat $OUTPUT_PATH/rs.log |grep  -E '0{1}\s+0{1}\s+0{1}'| awk -v OLDER_THAN=$OLDER_THAN '($6*3600) > ( OLDER_THAN * 3600) {print $1, $2, $6 }'|sort -k 3n|uniq > $OUTPUT_PATH/rs_inactiv.log
   cat $OUTPUT_PATH/rs_inactiv.log|grep -v openshift|awk -v OLDER_THAN=$OLDER_THAN '($3*3600) > ( OLDER_THAN*3600 ) {print "oc delete rs -n " $1, $2 }' > $OUTPUT_PATH/older_than_${OLDER_THAN}days.sh
   cat $OUTPUT_PATH/rs_inactiv.log|grep openshift|awk -v OLDER_THAN=$OLDER_THAN '($3*3600) > ( OLDER_THAN*3600 ) {print "oc delete rs -n " $1, $2 }' > $OUTPUT_PATH/older_ocp_than_${OLDER_THAN}days.sh
-  cat $OUTPUT_PATH/rs.log |grep  -E '0{1}\s+0{1}\s+0{1}'| awk '{print "-n " $1, $2}'|sort|uniq > $OUTPUT_PATH/rs_inactive.log
+  #cat $OUTPUT_PATH/rs.log |grep  -E '0{1}\s+0{1}\s+0{1}'| awk '{print "-n " $1, $2}'|sort|uniq > $OUTPUT_PATH/rs_inactive.log
   #cat rs.log |grep  -E '0{1}\s+0{1}\s+0{1}'| awk '{print "oc describe rs -n " $1, $2, $6, ($6*3600) }'|sort -k 7n|uniq
   $CLIENT get rs -A  -o jsonpath="{..image}" | tr -s '[[:space:]]' '\n' | sort | uniq > $OUTPUT_PATH/rs_images.log
   $CLIENT get replicasets -A | awk '{print "-n " $1, $2}'|sort|uniq > $OUTPUT_PATH/replicasetsns.log
   echo -e "REPLICASET: there are $(cat $OUTPUT_PATH/rs.log|wc -l) ReplicaSets."
-  echo -e "REPLICASET: there are $(cat $OUTPUT_PATH/rs_inactive.log|wc -l) INACTIVE ReplicaSets."
+  echo -e "REPLICASET: there are $(cat $OUTPUT_PATH/rs_inactiv.log|wc -l) INACTIVE ReplicaSets."
+  echo -e "REPLICASET: there are $(cat $OUTPUT_PATH/rs_inactiv.log|grep 'openshift-'|wc -l) INACTIVE openshift-* ReplicaSets."
+  echo -e "REPLICASET: there are $(cat $OUTPUT_PATH/rs_inactiv.log|grep -v 'openshift-'|wc -l) INACTIVE non OCP ReplicaSets."
   echo -e "REPLICASET: there are $(cat $OUTPUT_PATH/rs_images.log|wc -l) images referenced by ReplicaSets."
   echo -e ""
   echo -e "There are $(cat $OUTPUT_PATH/rs_inactiv.log|wc -l) replicasets older than $OLDER_THAN days"
