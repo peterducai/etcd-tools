@@ -24,6 +24,7 @@ will combine logs from ETCD, haproxy, router, apiserver into one timeline printi
 do 
 
 > oc login
+
 > ./etcd-analyzer.sh
 
 and it will print summary of warnings, size of ETCD and number of objects.
@@ -33,6 +34,7 @@ and it will print summary of warnings, size of ETCD and number of objects.
 do 
 
 > oc login
+
 > ./cleanup-analyzer.sh
 
 and it will print number of deployments, replicasets and how many of them are inactive and could be cleaned up.
