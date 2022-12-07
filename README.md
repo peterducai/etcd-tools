@@ -9,7 +9,7 @@ To use it, run
 
 or if you're missing clusterversion in your logs, here is exa
 
-> ./etcd-mg.sh <full path to MUST-GATHER> false 4.10     
+> ./etcd-mg.sh [full path to MUST-GATHER] false 4.10     
 
 PS: false parameter is to disable gnuplot use
 
