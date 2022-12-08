@@ -5,11 +5,11 @@
 ETCD script will make collect info from MUST-GATHER, make little summary and search for errors/issues and explains what are expected values.
 To use it, run
 
-> ./etcd-mg.sh <full path to MUST-GATHER>
+> ./etcd-mg.sh [full path to MUST-GATHER]
 
 or if you're missing clusterversion in your logs, here is exa
 
-> ./etcd-mg.sh <full path to MUST-GATHER> false 4.10     
+> ./etcd-mg.sh [full path to MUST-GATHER] false 4.10     
 
 PS: false parameter is to disable gnuplot use
 
@@ -24,6 +24,7 @@ will combine logs from ETCD, haproxy, router, apiserver into one timeline printi
 do 
 
 > oc login
+
 > ./etcd-analyzer.sh
 
 and it will print summary of warnings, size of ETCD and number of objects.
@@ -33,6 +34,7 @@ and it will print summary of warnings, size of ETCD and number of objects.
 do 
 
 > oc login
+
 > ./cleanup-analyzer.sh
 
 and it will print number of deployments, replicasets and how many of them are inactive and could be cleaned up.
