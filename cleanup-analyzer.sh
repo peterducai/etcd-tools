@@ -132,6 +132,8 @@ pods() {
   echo -e "PODS: there are $(cat $OUTPUT_PATH/pod.log|wc -l) pods."
   $CLIENT get pods -A -o jsonpath="{..image}" | tr -s '[[:space:]]' '\n'| sort | uniq  > $OUTPUT_PATH/pod_images.log
   echo -e "PODS: there are $(cat $OUTPUT_PATH/pod_images.log|wc -l) images referenced by pods."
+  echo -e ""
+  cat $OUTPUT_PATH/pod_images.log |cut -d/ -f2|uniq -c|sort -n --rev|head -10
 }
 
 # REPLICASETS
@@ -176,6 +178,7 @@ deployments() {
   echo -e ""
   echo -e "There are $(cat $OUTPUT_PATH/dep_inactiv.log|wc -l) deployments older than $OLDER_THAN days"
   echo -e ""
+  cat $OUTPUT_PATH/depimage.log|uniq|cut -d/ -f2|uniq -c|sort -n --rev|head -10
 }
 
 jobs() {
