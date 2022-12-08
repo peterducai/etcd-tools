@@ -115,12 +115,13 @@ imagestreams() {
   echo -e "[IMAGESTREAMS]"
   $CLIENT get imagestream -A -o jsonpath="{..dockerImageReference}" | tr -s '[[:space:]]' '\n'| sort | uniq > $OUTPUT_PATH/is_images.log
   $CLIENT get is -A > $OUTPUT_PATH/is.log
-  ISALL=$(cat $OUTPUT_PATH/is_images.log|wc -l)
-  ISDEV=$(cat $OUTPUT_PATH/is_images.log|grep openshift-release-dev|wc -l)
+  ISALL=$(cat $OUTPUT_PATH/is_images.log|uniq|wc -l)
+  ISDEV=$(cat $OUTPUT_PATH/is_images.log|uniq|grep openshift-release-dev|wc -l)
   echo -e "IMAGESTREAM: there are $ISALL images referenced by Imagestreams."
   echo -e "IMAGESTREAM: there are $ISDEV openshift-release-dev images referenced by Imagestreams."
   echo -e "IMAGESTREAM: there are $(("$ISALL"-"$ISDEV")) other images referenced by Imagestreams."
   echo -e "..."
+  cat $OUTPUT_PATH/is_images.log |cut -d/ -f2|uniq -c|sort -n --rev|head -10
 
 }
 
@@ -156,7 +157,7 @@ replicasets() {
   echo -e "All inactive non-openshift/user RS are written to $OUTPUT_PATH/older_than_${OLDER_THAN}days.sh"
   echo -e "All inactive openshift- RS are written to $OUTPUT_PATH/older_ocp_than_${OLDER_THAN}days.sh"
   echo -e ""
-
+  cat $OUTPUT_PATH/rs_images.log |cut -d/ -f2|uniq -c|sort -n --rev|head -10
   # cat $OUTPUT_PATH/rs.log |grep  -E '0{1}\s+0{1}\s+0{1}'| awk '($6*3600) > (20*3600) {print "oc describe rs -n " $1, $2, $6 }'|sort -k 7n|uniq
 }
 
