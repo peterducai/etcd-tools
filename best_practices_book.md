@@ -1,6 +1,6 @@
 # Best practices for Openshift/Kubernetes
 
-As developers usually don't have administration knowledge of Kubebernetes/Openshift, they might unknowingly put extra stress on the cluster simply by not cleaning up unused resources or by running specific operators. These best practices will not help only with performance and stability of cluster, but also explain how to identify abandoned or very huge resources.
+As developers usually don't have administration knowledge of Kubebernetes/Openshift, they might unknowingly put extra stress on the cluster simply by not cleaning up unused resources or by running specific operators/pipelines. These best practices will not help only with performance and stability of cluster, but also explain how to identify abandoned or very huge resources.
 
 ## Importance of masters and ETCD
 
@@ -27,6 +27,7 @@ Spinning disks and network drives (like NFS) are highly discouraged mainly due t
 
 For Three-Node OpenShift Compact Clusters, make sure that you have dedicated NVMe or SSD drives for the control plane and separated Drives for application and another infrastructure stacks. Eventually, according to current workload in place, dedicated SSD drives for etcd (/var/lib/etcd) must be also taken in consideration.
 
+IMPORTANT: every storage behaves different ways, but usually if you tweak your storage too much for sequential IOPS, you will loose concurrent IOPS. You should find right balance where you have enough sequential IOPS (but also latency!) for ETCD, but also enough concurrent IOPS (where latency is not important) for other common operations (like moving bigger files, logs and so on..).
 
 ## CPU and RAM
 
