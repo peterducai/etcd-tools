@@ -49,8 +49,9 @@ echo -e "  IMPORTANT fsync percentiles:   $(cat $OUTPUT_PATH/fsyncline)"
 sleep 2
 
 cat $OUTPUT_PATH/fsyncline|cut -d ' ' -f8 |cut -d ']' -f 1 > $OUTPUT_PATH/fsync99
-cat $OUTPUT_PATH/fsyncline|cut -d ' ' -f12 |cut -d ']' -f 1 > $OUTPUT_PATH/fsync999
 sleep 2
+cat $OUTPUT_PATH/fsyncline|cut -d ' ' -f12 |cut -d ']' -f 1 > $OUTPUT_PATH/fsync999
+sleep 6
 FSYNC99=$(cat $OUTPUT_PATH/fsync99)
 sleep 2
 FSYNC999=$(cat $OUTPUT_PATH/fsync999)
