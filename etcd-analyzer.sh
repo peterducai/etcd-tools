@@ -86,7 +86,7 @@ echo -e "API URL: $API"
 
 
 analyze_members() {
-  for i in $ETCD; do
+  for i in ${ETCD[@]}; do
     echo -e ""
     echo -e "-[$i]--------------------"
     

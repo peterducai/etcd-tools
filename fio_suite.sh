@@ -49,13 +49,13 @@ echo -e "  IMPORTANT fsync percentiles:   $(cat $OUTPUT_PATH/fsyncline)"
 sleep 2
 
 cat $OUTPUT_PATH/fsyncline|cut -d ' ' -f8 |cut -d ']' -f 1 > $OUTPUT_PATH/fsync99
-sleep 2
+sleep 5
 cat $OUTPUT_PATH/fsyncline|cut -d ' ' -f12 |cut -d ']' -f 1 > $OUTPUT_PATH/fsync999
-sleep 6
+sleep 5
 FSYNC99=$(cat $OUTPUT_PATH/fsync99)
-sleep 2
+sleep 5
 FSYNC999=$(cat $OUTPUT_PATH/fsync999)
-sleep 1
+sleep 5
 IOPS=$(cat $OUTPUT_PATH/cleanfsynctest.log |grep IOPS|tail -1| cut -d ' ' -f2-|cut -d ' ' -f3|rev|cut -c2-|rev|cut -c6-)
 if [[ "$IOPS" == *"k" ]]; then
   IOPS=$(echo $IOPS|rev|cut -c2-|rev)
@@ -63,7 +63,7 @@ if [[ "$IOPS" == *"k" ]]; then
   IOPS=$(( $xIO * 1000 ))
   #IOPS=$(($((${IOPS%%.*}))*1000))
 fi
-
+sleep 5
 echo -e "-------------------------------------------------------"
 echo -e "SEQUENTIAL IOPS: $IOPS"
 if (( "$IOPS" < 300 )); then
