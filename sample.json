@@ -1,0 +1,303 @@
+{
+    "apiVersion": "v1",
+    "items": [
+        {
+            "apiVersion": "build.openshift.io/v1",
+            "kind": "BuildConfig",
+            "metadata": {
+                "annotations": {
+                    "app.openshift.io/vcs-ref": "",
+                    "app.openshift.io/vcs-uri": "https://github.com/sclorg/nginx-ex.git",
+                    "openshift.io/generated-by": "OpenShiftWebConsole"
+                },
+                "creationTimestamp": "2023-02-22T13:27:43Z",
+                "generation": 2,
+                "labels": {
+                    "app": "nginx-sample",
+                    "app.kubernetes.io/component": "nginx-sample",
+                    "app.kubernetes.io/instance": "nginx-sample",
+                    "app.kubernetes.io/name": "nginx-sample",
+                    "app.kubernetes.io/part-of": "sample-app",
+                    "app.openshift.io/runtime": "nginx",
+                    "app.openshift.io/runtime-version": "1.20-ubi7"
+                },
+                "managedFields": [
+                    {
+                        "apiVersion": "build.openshift.io/v1",
+                        "fieldsType": "FieldsV1",
+                        "fieldsV1": {
+                            "f:metadata": {
+                                "f:annotations": {
+                                    ".": {},
+                                    "f:app.openshift.io/vcs-ref": {},
+                                    "f:app.openshift.io/vcs-uri": {},
+                                    "f:openshift.io/generated-by": {}
+                                },
+                                "f:labels": {
+                                    ".": {},
+                                    "f:app": {},
+                                    "f:app.kubernetes.io/component": {},
+                                    "f:app.kubernetes.io/instance": {},
+                                    "f:app.kubernetes.io/name": {},
+                                    "f:app.kubernetes.io/part-of": {},
+                                    "f:app.openshift.io/runtime": {},
+                                    "f:app.openshift.io/runtime-version": {}
+                                }
+                            },
+                            "f:spec": {
+                                "f:output": {
+                                    "f:to": {}
+                                },
+                                "f:runPolicy": {},
+                                "f:source": {
+                                    "f:git": {
+                                        ".": {},
+                                        "f:uri": {}
+                                    },
+                                    "f:type": {}
+                                },
+                                "f:strategy": {
+                                    "f:sourceStrategy": {
+                                        ".": {},
+                                        "f:from": {}
+                                    },
+                                    "f:type": {}
+                                },
+                                "f:triggers": {}
+                            }
+                        },
+                        "manager": "Mozilla",
+                        "operation": "Update",
+                        "time": "2023-02-22T13:27:42Z"
+                    },
+                    {
+                        "apiVersion": "build.openshift.io/v1",
+                        "fieldsType": "FieldsV1",
+                        "fieldsV1": {
+                            "f:status": {
+                                "f:imageChangeTriggers": {},
+                                "f:lastVersion": {}
+                            }
+                        },
+                        "manager": "Go-http-client",
+                        "operation": "Update",
+                        "time": "2023-02-22T13:27:43Z"
+                    }
+                ],
+                "name": "nginx-sample",
+                "namespace": "sample4script",
+                "resourceVersion": "1431922",
+                "uid": "e002ca91-ac25-4be3-8882-1e7387241a4a"
+            },
+            "spec": {
+                "failedBuildsHistoryLimit": 5,
+                "nodeSelector": null,
+                "output": {
+                    "to": {
+                        "kind": "ImageStreamTag",
+                        "name": "nginx-sample:latest"
+                    }
+                },
+                "postCommit": {},
+                "resources": {},
+                "runPolicy": "Serial",
+                "source": {
+                    "git": {
+                        "uri": "https://github.com/sclorg/nginx-ex.git"
+                    },
+                    "type": "Git"
+                },
+                "strategy": {
+                    "sourceStrategy": {
+                        "from": {
+                            "kind": "ImageStreamTag",
+                            "name": "nginx:1.20-ubi7",
+                            "namespace": "openshift"
+                        }
+                    },
+                    "type": "Source"
+                },
+                "successfulBuildsHistoryLimit": 5,
+                "triggers": [
+                    {
+                        "generic": {
+                            "secretReference": {
+                                "name": "nginx-sample-generic-webhook-secret"
+                            }
+                        },
+                        "type": "Generic"
+                    },
+                    {
+                        "github": {
+                            "secretReference": {
+                                "name": "nginx-sample-github-webhook-secret"
+                            }
+                        },
+                        "type": "GitHub"
+                    },
+                    {
+                        "imageChange": {},
+                        "type": "ImageChange"
+                    },
+                    {
+                        "type": "ConfigChange"
+                    }
+                ]
+            },
+            "status": {
+                "imageChangeTriggers": [
+                    {
+                        "from": {
+                            "name": "nginx:1.20-ubi7",
+                            "namespace": "openshift"
+                        },
+                        "lastTriggerTime": null,
+                        "lastTriggeredImageID": "image-registry.openshift-image-registry.svc:5000/openshift/nginx@sha256:6a47481f952d8fd6109f743a2ab1fb09e409c6e9bac18923c802eef2a00136a9"
+                    }
+                ],
+                "lastVersion": 1
+            }
+        },
+        {
+            "apiVersion": "build.openshift.io/v1",
+            "kind": "BuildConfig",
+            "metadata": {
+                "annotations": {
+                    "app.openshift.io/vcs-ref": "",
+                    "app.openshift.io/vcs-uri": "https://github.com/nodeshift-starters/devfile-sample.git",
+                    "openshift.io/generated-by": "OpenShiftWebConsole"
+                },
+                "creationTimestamp": "2023-02-22T13:26:30Z",
+                "generation": 2,
+                "labels": {
+                    "app": "nodejs-basic",
+                    "app.kubernetes.io/component": "nodejs-basic",
+                    "app.kubernetes.io/instance": "nodejs-basic",
+                    "app.kubernetes.io/name": "nodejs-basic",
+                    "app.kubernetes.io/part-of": "sample-app",
+                    "app.openshift.io/runtime": "nodejs-basic"
+                },
+                "managedFields": [
+                    {
+                        "apiVersion": "build.openshift.io/v1",
+                        "fieldsType": "FieldsV1",
+                        "fieldsV1": {
+                            "f:metadata": {
+                                "f:annotations": {
+                                    ".": {},
+                                    "f:app.openshift.io/vcs-ref": {},
+                                    "f:app.openshift.io/vcs-uri": {},
+                                    "f:openshift.io/generated-by": {}
+                                },
+                                "f:labels": {
+                                    ".": {},
+                                    "f:app": {},
+                                    "f:app.kubernetes.io/component": {},
+                                    "f:app.kubernetes.io/instance": {},
+                                    "f:app.kubernetes.io/name": {},
+                                    "f:app.kubernetes.io/part-of": {},
+                                    "f:app.openshift.io/runtime": {}
+                                }
+                            },
+                            "f:spec": {
+                                "f:output": {
+                                    "f:to": {}
+                                },
+                                "f:runPolicy": {},
+                                "f:source": {
+                                    "f:contextDir": {},
+                                    "f:git": {
+                                        ".": {},
+                                        "f:uri": {}
+                                    },
+                                    "f:type": {}
+                                },
+                                "f:strategy": {
+                                    "f:dockerStrategy": {
+                                        ".": {},
+                                        "f:dockerfilePath": {}
+                                    },
+                                    "f:type": {}
+                                },
+                                "f:triggers": {}
+                            }
+                        },
+                        "manager": "Mozilla",
+                        "operation": "Update",
+                        "time": "2023-02-22T13:26:30Z"
+                    },
+                    {
+                        "apiVersion": "build.openshift.io/v1",
+                        "fieldsType": "FieldsV1",
+                        "fieldsV1": {
+                            "f:status": {
+                                "f:lastVersion": {}
+                            }
+                        },
+                        "manager": "Go-http-client",
+                        "operation": "Update",
+                        "time": "2023-02-22T13:26:31Z"
+                    }
+                ],
+                "name": "nodejs-basic",
+                "namespace": "sample4script",
+                "resourceVersion": "1431348",
+                "uid": "60870c7f-2eb2-4c8c-a773-550448d69183"
+            },
+            "spec": {
+                "failedBuildsHistoryLimit": 5,
+                "nodeSelector": null,
+                "output": {
+                    "to": {
+                        "kind": "ImageStreamTag",
+                        "name": "nodejs-basic:latest"
+                    }
+                },
+                "postCommit": {},
+                "resources": {},
+                "runPolicy": "Serial",
+                "source": {
+                    "git": {
+                        "uri": "https://github.com/nodeshift-starters/devfile-sample.git"
+                    },
+                    "type": "Git"
+                },
+                "strategy": {
+                    "dockerStrategy": {
+                        "dockerfilePath": "Dockerfile"
+                    },
+                    "type": "Docker"
+                },
+                "successfulBuildsHistoryLimit": 5,
+                "triggers": [
+                    {
+                        "generic": {
+                            "secretReference": {
+                                "name": "nodejs-basic-generic-webhook-secret"
+                            }
+                        },
+                        "type": "Generic"
+                    },
+                    {
+                        "github": {
+                            "secretReference": {
+                                "name": "nodejs-basic-github-webhook-secret"
+                            }
+                        },
+                        "type": "GitHub"
+                    },
+                    {
+                        "type": "ConfigChange"
+                    }
+                ]
+            },
+            "status": {
+                "lastVersion": 1
+            }
+        }
+    ],
+    "kind": "List",
+    "metadata": {
+        "resourceVersion": ""
+    }
+}

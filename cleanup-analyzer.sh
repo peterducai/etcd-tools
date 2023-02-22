@@ -102,19 +102,126 @@ print_help() {
 
 namespaces() {
   echo -e ""
-  echo -e "[NS]"
+  echo -e "[NAMESPACES]--------------------------------"
   oc get ns |grep -v openshift|grep -v kube|grep -v default > $OUTPUT_PATH/ns.log
   oc get ns > $OUTPUT_PATH/ns_all.log
   echo -e ""
-  echo -e "NS: there are together $(cat $OUTPUT_PATH/ns_all.log|wc -l) namespaces."
-  echo -e "NS: there are $(cat $OUTPUT_PATH/ns.log|wc -l) non-openshift namespaces."
+  echo -e "$(cat $OUTPUT_PATH/ns.log|wc -l) non-openshift namespaces."
+  echo -e "$(cat $OUTPUT_PATH/ns_all.log|wc -l) namespaces together."
 }
 
 imagestreams() {
   echo -e ""
-  echo -e "[IMAGESTREAMS]"
+  echo -e "[IMAGESTREAMS]--------------------------------"
   $CLIENT get imagestream -A -o jsonpath="{..dockerImageReference}" | tr -s '[[:space:]]' '\n'| sort | uniq > $OUTPUT_PATH/is_images.log
   $CLIENT get is -A > $OUTPUT_PATH/is.log
+  ISALL=$(cat $OUTPUT_PATH/is_images.log|uniq|wc -l)
+  ISDEV=$(cat $OUTPUT_PATH/is_images.log|uniq|grep openshift-release-dev|wc -l)
+  echo -e ""
+  echo -e "$ISALL images referenced by Imagestreams."
+  echo -e "$ISDEV openshift-release-dev images referenced by Imagestreams."
+  echo -e "$(("$ISALL"-"$ISDEV")) other images referenced by Imagestreams."
+  echo -e ""
+  cat $OUTPUT_PATH/is_images.log |cut -d/ -f1,2|sort -k1,2|uniq -c|sort -n --rev|head -10
+
+}
+
+imagestreamtags() {
+  echo -e ""
+  echo -e "[IMAGESTREAMTAGS]--------------------------------"
+  $CLIENT get imagestream -A -o jsonpath="{.output.to.name}" | tr -s '[[:space:]]' '\n'| sort | uniq > $OUTPUT_PATH/is_images.log
+  $CLIENT get is -A > $OUTPUT_PATH/is.log
+  ISALL=$(cat $OUTPUT_PATH/is_images.log|uniq|wc -l)
+  ISDEV=$(cat $OUTPUT_PATH/is_images.log|uniq|grep openshift-release-dev|wc -l)
+  echo -e "IMAGESTREAMTAGS: there are $ISALL images referenced by Imagestreamtags."
+  echo -e "IMAGESTREAMTAGS: there are $ISDEV openshift-release-dev images referenced by Imagestreamtags."
+  echo -e "IMAGESTREAMTAGS: there are $(("$ISALL"-"$ISDEV")) other images referenced by Imagestreamtags."
+  echo -e "..."
+  cat $OUTPUT_PATH/is_images.log |cut -d/ -f1,2|sort -k1,2|uniq -c|sort -n --rev|head -10
+
+}
+
+
+pods() {
+  echo -e ""
+  echo -e "[PODS]--------------------------------"
+  echo -e ""
+  $CLIENT get pods -A|tail -n +2 > $OUTPUT_PATH/pod.log
+  echo -e "$(cat $OUTPUT_PATH/pod.log|wc -l) pods together."
+  $CLIENT get pods -A -o jsonpath="{..image}" | tr -s '[[:space:]]' '\n'| sort | uniq  > $OUTPUT_PATH/pod_images.log
+  echo -e "$(cat $OUTPUT_PATH/pod_images.log|wc -l) images referenced by pods."
+  echo -e ""
+  cat $OUTPUT_PATH/pod_images.log |cut -d/ -f1,2|sort -k1,2|uniq -c|sort -n --rev|head -10
+}
+
+# REPLICASETS
+
+replicasets() {
+  echo -e ""
+  echo -e "[REPLICASETS]--------------------------------"
+  echo -e ""
+  $CLIENT get replicasets -A > $OUTPUT_PATH/rs.log
+  cat $OUTPUT_PATH/rs.log |grep  -E '0{1}\s+0{1}\s+0{1}'| awk -v OLDER_THAN=$OLDER_THAN '($6*3600) > ( OLDER_THAN * 3600) {print $1, $2, $6 }'|sort -k 3n|uniq > $OUTPUT_PATH/rs_inactiv.log
+  cat $OUTPUT_PATH/rs_inactiv.log|grep -v openshift|awk -v OLDER_THAN=$OLDER_THAN '($3*3600) > ( OLDER_THAN*3600 ) {print "oc delete rs -n " $1, $2 }' > $OUTPUT_PATH/older_than_${OLDER_THAN}days.sh
+  cat $OUTPUT_PATH/rs_inactiv.log|grep openshift|awk -v OLDER_THAN=$OLDER_THAN '($3*3600) > ( OLDER_THAN*3600 ) {print "oc delete rs -n " $1, $2 }' > $OUTPUT_PATH/older_ocp_than_${OLDER_THAN}days.sh
+  #cat $OUTPUT_PATH/rs.log |grep  -E '0{1}\s+0{1}\s+0{1}'| awk '{print "-n " $1, $2}'|sort|uniq > $OUTPUT_PATH/rs_inactive.log
+  #cat rs.log |grep  -E '0{1}\s+0{1}\s+0{1}'| awk '{print "oc describe rs -n " $1, $2, $6, ($6*3600) }'|sort -k 7n|uniq
+  $CLIENT get rs -A  -o jsonpath="{..image}" | tr -s '[[:space:]]' '\n' | sort | uniq > $OUTPUT_PATH/rs_images.log
+  $CLIENT get replicasets -A | awk '{print "-n " $1, $2}'|sort|uniq > $OUTPUT_PATH/replicasetsns.log
+  echo -e "$(cat $OUTPUT_PATH/rs.log|wc -l) ReplicaSets."
+  echo -e "$(cat $OUTPUT_PATH/rs_inactiv.log|wc -l) INACTIVE ReplicaSets."
+  echo -e "$(cat $OUTPUT_PATH/rs_inactiv.log|grep 'openshift-'|wc -l) INACTIVE openshift-* ReplicaSets."
+  echo -e "$(cat $OUTPUT_PATH/rs_inactiv.log|grep -v 'openshift-'|wc -l) INACTIVE non OCP ReplicaSets."
+  echo -e "$(cat $OUTPUT_PATH/rs_images.log|wc -l) images referenced by ReplicaSets."
+  echo -e ""
+  echo -e "$(cat $OUTPUT_PATH/rs_inactiv.log|wc -l) replicasets older than $OLDER_THAN days"
+  echo -e "All inactive non-openshift/user RS are written to $OUTPUT_PATH/older_than_${OLDER_THAN}days.sh"
+  echo -e "All inactive openshift- RS are written to $OUTPUT_PATH/older_ocp_than_${OLDER_THAN}days.sh"
+  echo -e ""
+  cat $OUTPUT_PATH/rs_images.log |cut -d/ -f1,2|sort -k1,2|uniq -c|sort -n --rev|head -10
+  # cat $OUTPUT_PATH/rs.log |grep  -E '0{1}\s+0{1}\s+0{1}'| awk '($6*3600) > (20*3600) {print "oc describe rs -n " $1, $2, $6 }'|sort -k 7n|uniq
+}
+
+deployments() {
+  echo -e ""
+  echo -e "[DEPLOYMENTS]--------------------------------"
+  echo -e ""
+  $CLIENT get deployment -A|tail -n +2 > $OUTPUT_PATH/deployment.log
+  echo -e "$(cat $OUTPUT_PATH/deployment.log|wc -l) deployments."
+  cat $OUTPUT_PATH/deployment.log |grep  -E '0{1}\s+0{1}\s'| awk -v OLDER_THAN=$OLDER_THAN '($6*3600) > ( OLDER_THAN * 3600) {print " " $1, $2, $6 }'|sort -k 3n|uniq > $OUTPUT_PATH/dep_inactiv.log
+  cat $OUTPUT_PATH/deployment.log |awk '{print $2" -n "$1}' > $OUTPUT_PATH/deploy.log
+
+  $CLIENT get deployment -A -o jsonpath="{..image}" | tr -s '[[:space:]]' '\n' | sort | uniq > $OUTPUT_PATH/depimage.log
+  echo -e "$(cat $OUTPUT_PATH/depimage.log|sort|uniq|wc -l) images referenced by Deployments."
+  
+  echo -e ""
+  echo -e "$(cat $OUTPUT_PATH/dep_inactiv.log|wc -l) inactive deployments older than $OLDER_THAN days"
+  echo -e ""
+  cat $OUTPUT_PATH/dep_inactiv.log|cut -d/ -f1,2|sort -k1,2|uniq -c|sort -n --rev|head -10
+}
+
+buildconfigs() {
+  echo -e ""
+  echo -e "[BUILDCONFIGS]--------------------------------"
+  echo -e ""
+  $CLIENT get buildconfig -A -o jsonpath='{range .items[*].spec.output.to}{"\n"}{.name}' | tr -s '[[:space:]]' '\n'| sort | uniq > $OUTPUT_PATH/bc_images.log
+  $CLIENT get bc -A > $OUTPUT_PATH/bc.log
+  BCALL=$(cat $OUTPUT_PATH/bc_images.log|uniq|wc -l)
+  BCDEV=$(cat $OUTPUT_PATH/bc_images.log|uniq|grep openshift-release-dev|wc -l)
+  echo -e "$BCALL images referenced by BuildConfigs."
+  echo -e "$BCDEV openshift-release-dev images referenced by BuildConfigs."
+  echo -e "$(("$BCALL"-"$BCDEV")) non-openshift images referenced by BuildConfigs."
+  echo -e ""
+  cat $OUTPUT_PATH/bc_images.log |cut -d/ -f1,2|sort -k1,2|uniq -c|sort -n --rev|head -10
+}
+
+
+#NEW
+xbuildconfigs() {
+  echo -e ""
+  echo -e "[IMAGESTREAMS]--------------------------------"
+  $CLIENT get bc -A -o jsonpath="{..dockerImageReference}" | tr -s '[[:space:]]' '\n'| sort | uniq > $OUTPUT_PATH/is_images.log
+  $CLIENT get bc -A > $OUTPUT_PATH/is.log
   ISALL=$(cat $OUTPUT_PATH/is_images.log|uniq|wc -l)
   ISDEV=$(cat $OUTPUT_PATH/is_images.log|uniq|grep openshift-release-dev|wc -l)
   echo -e "IMAGESTREAM: there are $ISALL images referenced by Imagestreams."
@@ -125,61 +232,6 @@ imagestreams() {
 
 }
 
-pods() {
-  echo -e ""
-  echo -e "[PODS]"
-  $CLIENT get pods -A|tail -n +2 > $OUTPUT_PATH/pod.log
-  echo -e "PODS: there are $(cat $OUTPUT_PATH/pod.log|wc -l) pods."
-  $CLIENT get pods -A -o jsonpath="{..image}" | tr -s '[[:space:]]' '\n'| sort | uniq  > $OUTPUT_PATH/pod_images.log
-  echo -e "PODS: there are $(cat $OUTPUT_PATH/pod_images.log|wc -l) images referenced by pods."
-  echo -e ""
-  cat $OUTPUT_PATH/pod_images.log |cut -d/ -f1,2|sort -k1,2|uniq -c|sort -n --rev|head -10
-}
-
-# REPLICASETS
-
-replicasets() {
-  echo -e ""
-  echo -e "[REPLICASETS]"
-  $CLIENT get replicasets -A > $OUTPUT_PATH/rs.log
-  cat $OUTPUT_PATH/rs.log |grep  -E '0{1}\s+0{1}\s+0{1}'| awk -v OLDER_THAN=$OLDER_THAN '($6*3600) > ( OLDER_THAN * 3600) {print $1, $2, $6 }'|sort -k 3n|uniq > $OUTPUT_PATH/rs_inactiv.log
-  cat $OUTPUT_PATH/rs_inactiv.log|grep -v openshift|awk -v OLDER_THAN=$OLDER_THAN '($3*3600) > ( OLDER_THAN*3600 ) {print "oc delete rs -n " $1, $2 }' > $OUTPUT_PATH/older_than_${OLDER_THAN}days.sh
-  cat $OUTPUT_PATH/rs_inactiv.log|grep openshift|awk -v OLDER_THAN=$OLDER_THAN '($3*3600) > ( OLDER_THAN*3600 ) {print "oc delete rs -n " $1, $2 }' > $OUTPUT_PATH/older_ocp_than_${OLDER_THAN}days.sh
-  #cat $OUTPUT_PATH/rs.log |grep  -E '0{1}\s+0{1}\s+0{1}'| awk '{print "-n " $1, $2}'|sort|uniq > $OUTPUT_PATH/rs_inactive.log
-  #cat rs.log |grep  -E '0{1}\s+0{1}\s+0{1}'| awk '{print "oc describe rs -n " $1, $2, $6, ($6*3600) }'|sort -k 7n|uniq
-  $CLIENT get rs -A  -o jsonpath="{..image}" | tr -s '[[:space:]]' '\n' | sort | uniq > $OUTPUT_PATH/rs_images.log
-  $CLIENT get replicasets -A | awk '{print "-n " $1, $2}'|sort|uniq > $OUTPUT_PATH/replicasetsns.log
-  echo -e "REPLICASET: there are $(cat $OUTPUT_PATH/rs.log|wc -l) ReplicaSets."
-  echo -e "REPLICASET: there are $(cat $OUTPUT_PATH/rs_inactiv.log|wc -l) INACTIVE ReplicaSets."
-  echo -e "REPLICASET: there are $(cat $OUTPUT_PATH/rs_inactiv.log|grep 'openshift-'|wc -l) INACTIVE openshift-* ReplicaSets."
-  echo -e "REPLICASET: there are $(cat $OUTPUT_PATH/rs_inactiv.log|grep -v 'openshift-'|wc -l) INACTIVE non OCP ReplicaSets."
-  echo -e "REPLICASET: there are $(cat $OUTPUT_PATH/rs_images.log|wc -l) images referenced by ReplicaSets."
-  echo -e ""
-  echo -e "There are $(cat $OUTPUT_PATH/rs_inactiv.log|wc -l) replicasets older than $OLDER_THAN days"
-  echo -e "All inactive non-openshift/user RS are written to $OUTPUT_PATH/older_than_${OLDER_THAN}days.sh"
-  echo -e "All inactive openshift- RS are written to $OUTPUT_PATH/older_ocp_than_${OLDER_THAN}days.sh"
-  echo -e ""
-  cat $OUTPUT_PATH/rs_images.log |cut -d/ -f1,2|sort -k1,2|uniq -c|sort -n --rev|head -10
-  # cat $OUTPUT_PATH/rs.log |grep  -E '0{1}\s+0{1}\s+0{1}'| awk '($6*3600) > (20*3600) {print "oc describe rs -n " $1, $2, $6 }'|sort -k 7n|uniq
-}
-
-deployments() {
-  echo -e ""
-  echo -e "[DEPLOYMENTS]"
-  $CLIENT get deployment -A|tail -n +2 > $OUTPUT_PATH/deployment.log
-  echo -e "DEPLOYMENT: There is $(cat $OUTPUT_PATH/deployment.log|wc -l) deployments."
-  cat $OUTPUT_PATH/deployment.log |grep  -E '0{1}\s+0{1}\s'| awk -v OLDER_THAN=$OLDER_THAN '($6*3600) > ( OLDER_THAN * 3600) {print " " $1, $2, $6 }'|sort -k 3n|uniq > $OUTPUT_PATH/dep_inactiv.log
-  cat $OUTPUT_PATH/deployment.log |awk '{print $2" -n "$1}' > $OUTPUT_PATH/deploy.log
-# while IFS= read -r line; do $CLIENT describe deployment $line |grep Image | awk '{print $2}'; done < deployment.log
-
-  $CLIENT get deployment -A -o jsonpath="{..image}" | tr -s '[[:space:]]' '\n' | sort | uniq > $OUTPUT_PATH/depimage.log
-  echo -e "DEPLOYMENT: there is $(cat $OUTPUT_PATH/depimage.log|sort|uniq|wc -l) images referenced by Deployments."
-  
-  echo -e ""
-  echo -e "There are $(cat $OUTPUT_PATH/dep_inactiv.log|wc -l) deployments older than $OLDER_THAN days"
-  echo -e ""
-  cat $OUTPUT_PATH/|cut -d/ -f1,2|sort -k1,2|uniq -c|sort -n --rev|head -10
-}
 
 jobs() {
   echo -e ""
@@ -224,12 +276,14 @@ namespaces
 imagestreams
 pods
 deployments
+buildconfigs
 replicasets
 jobs
 #list_all
 diffing
 
-echo -e "Done"
+echo -e ""
+echo -e "[END]"
 
 
 
