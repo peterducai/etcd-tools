@@ -79,8 +79,10 @@ eval set -- "$PARAMS"
 
 MASTERS=$($CLIENT get nodes |grep master|cut -d ' ' -f1)
 ETCD=( $($CLIENT --as system:admin -n $ETCDNS get -l k8s-app=etcd pods -o name | tr -s '\n' ' ' | sed 's/pod\///g' ) )
-API=$( oc config view --minify -o jsonpath='{.clusters[*].cluster.server}' )
+#API=$( oc config view --minify -o jsonpath='{.clusters[*].cluster.server}' )
+API=$( $CLIENT get cm console-config -n openshift-console -o jsonpath="{.data.console-config\.yaml}" | grep masterPublicURL | awk '{print $2}' )
 echo -e "API URL: $API"
+TOKEN=$(oc whoami -t)
 
 
 
@@ -97,7 +99,9 @@ analyze_members() {
     echo -e "Errors and dropped packets:"
     for j in $($CLIENT exec $i -c etcd -n $ETCDNS -- ls /sys/class/net|grep -v veth|grep -v lo); do oc exec -n $ETCDNS $i -c etcd -- ip -s link show dev $j; done
     echo -e ""
-    echo -e "Latency against API is $(curl -sk $API -w "%{time_connect}\n"|tail -1) .  Should be close to 0.002 (2ms) and no more than 0.008 (8ms)."
+#    echo -e "Latency against API is $(curl -sk $API -w "%{time_connect}\n"|tail -1) .  Should be close to 0.002 (2ms) and no more than 0.008 (8ms)."
+    echo -e "Latency against API is $(curl -sk -H "Authorization: Bearer $TOKEN" -X GET $API -w "%{time_connect}\n" --output /dev/null) .  Should be close to 0.002 (2ms) and no more than 0.008 (8ms)."
+    echo -e ""
     echo -e ""
     echo -e "LOGS \nstart on $($CLIENT logs $i -c etcd -n $ETCDNS|head -60|tail -1|cut -d ':' -f3|cut -c 2-14)"
     echo -e "ends on $($CLIENT logs $i -c etcd -n $ETCDNS|tail -1|cut -d ':' -f3|cut -c 2-14)"
