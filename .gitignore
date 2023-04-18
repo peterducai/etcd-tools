@@ -2,3 +2,6 @@ DATA
 keysonly.txt
 snippet.sh
 presentation.txt
+checksums.txt
+.gitignore
+checksums.txt.asc
