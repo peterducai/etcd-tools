@@ -139,7 +139,7 @@ network RTT latency: Big network latency and packet drops can also bring an unre
 
 ## etcd_network_peer_round_trip_time 99th 
 
-should be lower than 50ms
+should be lower than 50ms. Values of 40+ mean network latency is close to threshold and any peak could degrade ETCD performance.
 
 
 
