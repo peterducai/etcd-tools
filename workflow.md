@@ -68,6 +68,8 @@ Importance of data is in following order. Make sure you get data with highest pr
 
 Never make conclusion only from one metric alone, but rather look at combination of data and importance/priority of the data.
 
+Example of small/medium cluster:
+
 | fsync seq.     | libiao seq.     | concurrent    | outcome | solution                                                                                                                      |
 |----------------|-----------------|---------------|---------|-------------------------------------------------------------------------------------------------------------------------------|
 | IOPS below 300 | IOPS below 1000 | 10k+ IOPS     | BAD     | storage is optimized for concurrent IOPS but ETCD requires sequential                                                         |
@@ -108,7 +110,9 @@ should be lower than 50ms
 
 
 
-### etcd_disk_backend_commit_duration 99th should be lower than 25ms
+### etcd_disk_backend_commit_duration 99th
+
+should be lower than 25ms
 
 
 
@@ -126,4 +130,4 @@ should be lower than 50ms
 
 ## Object size
 
-If secret holds huge token, certifikate or SSH key, it might get performance problem even with less secrets than 8k.
+If secret holds huge token, certifikate or SSH key, it might get performance problem even with less secrets than 8k (on small to medium cluster).
