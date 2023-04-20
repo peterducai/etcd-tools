@@ -84,7 +84,7 @@ Example of small/medium cluster:
 <pre>
 ```
 cleanfsynctest: (groupid=0, jobs=1): err= 0: pid=89: Tue Sep 27 16:39:22 2022
-  <b>write: IOPS=230</b>, BW=517KiB/s (529kB/s)(22.0MiB/43595msec); 0 zone resets
+  <b>write: IOPS=230</b>, BW=517KiB/s (529kB/s)(22.0MiB/43595msec); 0 zone resets           <i><--- fsync sequential IOPS</i>
     clat (usec): min=4, max=37506, avg=63.37, stdev=393.00
      lat (usec): min=4, max=37508, avg=64.45, stdev=393.12
     clat percentiles (usec):
