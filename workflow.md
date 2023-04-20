@@ -76,6 +76,39 @@ Example of small/medium cluster:
 | 300-600 IOPS   | 1500-2500 IOPS  | below 10k     | GOOD    |                                                                                                                               |
 | 900+ IOPS      | 6000 IOPS       | very low IOPS | BAD     | storage is optimezd too much for ETCD but not for other things. High concurrent IO could degrade sequential processing a lot. |
 
+
+## Latency
+
+## How to read fio/fio_suite output
+
+<pre>
+```
+cleanfsynctest: (groupid=0, jobs=1): err= 0: pid=89: Tue Sep 27 16:39:22 2022
+  <b>write: IOPS=230</b>, BW=517KiB/s (529kB/s)(22.0MiB/43595msec); 0 zone resets
+    clat (usec): min=4, max=37506, avg=63.37, stdev=393.00
+     lat (usec): min=4, max=37508, avg=64.45, stdev=393.12
+    clat percentiles (usec):
+     |  1.00th=[    7],  5.00th=[   16], 10.00th=[   18], 20.00th=[   20],
+     | 30.00th=[   25], 40.00th=[   27], 50.00th=[   31], 60.00th=[   42],
+     | 70.00th=[   63], 80.00th=[   88], 90.00th=[  122], 95.00th=[  143],
+     | 99.00th=[  334], 99.50th=[  717], 99.90th=[ 1369], 99.95th=[ 1516],
+     | 99.99th=[ 6652]
+   bw (  KiB/s): min=   49, max= 1105, per=99.86%, avg=516.54, stdev=283.00, samples=87
+   iops        : min=   22, max=  492, avg=230.16, stdev=125.97, samples=87
+  lat (usec)   : 10=2.22%, 20=19.09%, 50=43.13%, 100=20.00%, 250=14.21%
+  lat (usec)   : 500=0.59%, 750=0.28%, 1000=0.20%
+  lat (msec)   : 2=0.24%, 10=0.02%, 50=0.01%
+  fsync/fdatasync/sync_file_range:
+    sync (usec): min=1245, max=293908, avg=4270.40, stdev=6256.20
+    sync percentiles (usec):
+     |  1.00th=[ 1532],  5.00th=[ 1811], 10.00th=[ 1926], 20.00th=[ 2180],
+     | 30.00th=[ 2704], 40.00th=[ 3130], 50.00th=[ 3294], 60.00th=[ 3490],
+     | 70.00th=[ 3785], 80.00th=[ 4359], 90.00th=[ 5538], 95.00th=[ 6456],
+     | <b>99.00th=[38011]</b>, 99.50th=[43254], <b>99.90th=[62653]</b>, 99.95th=[65799],
+     | 99.99th=[73925]
+```
+</pre>
+
 ### etcd_disk_wal_fsync_duration 99th and 99.9th
 
 should be lower than 10ms
