@@ -58,15 +58,21 @@ high sequential IOPS, super low concurrent IOPS, variable latency - NOT GOOD, to
 
 ## IOPS
 
-
-
 [fio suite]
 
-Importance of data is in following order. Make sure you get data with highest priority first and examine them first:
+Importance of data is in following order. Make sure you get data with highest priority first and examine them first. 
 
 1. Fsync latency and fsync sequential IOPS (is storage tweaked for ETCD?)
 2. LibIAO sequential IOPS  (is storage tweaked for sequential IO in general?)
 3. Concurrent IOPS  (while being tweaked for sequential IOPS, how storage can handle concurrent?)
+
+Never make conclusion only from one metric alone, but rather look at combination of data and importance/priority of the data.
+
+| fsync seq.     | libiao seq.     | concurrent    | outcome | solution                                                                                                                      |
+|----------------|-----------------|---------------|---------|-------------------------------------------------------------------------------------------------------------------------------|
+| IOPS below 300 | IOPS below 1000 | 10k+ IOPS     | BAD     | storage is optimized for concurrent IOPS but ETCD requires sequential                                                         |
+| 300-600 IOPS   | 1500-2500 IOPS  | below 10k     | GOOD    |                                                                                                                               |
+| 900+ IOPS      | 6000 IOPS       | very low IOPS | BAD     | storage is optimezd too much for ETCD but not for other things. High concurrent IO could degrade sequential processing a lot. |
 
 ### etcd_disk_wal_fsync_duration 99th and 99.9th
 
