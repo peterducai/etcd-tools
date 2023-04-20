@@ -45,10 +45,7 @@ values should be below 4.0. Values over 8.0 are alarming.
 
 There's always will be pros and cons as you cannot have storage that would have best concurrent IOPS but also sequential, or super high IOPS and super low latency. Customer should find balance between DB/ETCD related performance and generic (worker load) performance.
 
-Usual scenarios:
-
-* high concurrent IOPS, small sequential IOPS, variable latency - NOT GOOD, not fit for ETCD
-* high sequential IOPS, super low concurrent IOPS, variable latency - NOT GOOD, too much tweaked for ETCD but lacking performance for anything else.
+Latency should be stable whole time as excessive peaks could mean problem for ETCD (and therefor whole cluster). Even only few minutes lasting peak in latency could mean timeout on ETCD, API and oauth pods and cause inability to login to cluster.
 
 ## Setup
 
@@ -125,6 +122,9 @@ should be lower than 10ms
 > Usually when 99th is close to threshold, we will see 99.9th going above threshold, which means storage can barely provide required performance (for ETCD) and it's really better when 99.0th is below 10ms.
 
 
+### etcd_disk_backend_commit_duration 99th
+
+should be lower than 25ms
 
 # Network
 
@@ -135,17 +135,6 @@ should be lower than 10ms
 ## etcd_network_peer_round_trip_time 99th 
 
 should be lower than 50ms
-
-
-
-
-## Metrics
-
-
-
-### etcd_disk_backend_commit_duration 99th
-
-should be lower than 25ms
 
 
 
