@@ -108,7 +108,7 @@ cleanfsynctest: (groupid=0, jobs=1): err= 0: pid=89: Tue Sep 27 16:39:22 2022
 ```
 </pre>
 
-required fsync sequential IOPS
+required fsync sequential IOPS:
 
 * 50 - minimum, local development
 * 300 - medium cluster with average load
