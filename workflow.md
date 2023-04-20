@@ -155,6 +155,8 @@ should be lower than 50ms
 * large cluster
 * huge cluster - with too heavy load and object count 10k+ it could mean that in future load will reach limits and have to be split onto several smaller clusters
 
+With [cleanup_analyzer.sh](https://github.com/peterducai/etcd-tools/blob/main/cleanup-analyzer.sh) you can find out excessive number of inactive objects (images, deployments, etc..)
+
 
 ## Object size
 
