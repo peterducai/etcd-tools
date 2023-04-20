@@ -41,10 +41,30 @@ values should be below 4.0. Values over 8.0 are alarming.
 # Storage
 
 
+## Generic storage behaviour
+
+There's always will be pros and cons as you cannot have storage that would have best concurrent IOPS but also sequential, or super high IOPS and super low latency. Customer should find balance between DB/ETCD related performance and generic (worker load) performance.
+
+Usual scenarios:
+
+high concurrent IOPS, small sequential IOPS, variable latency - NOT GOOD, not fit for ETCD
+high sequential IOPS, super low concurrent IOPS, variable latency - NOT GOOD, too much tweaked for ETCD but lacking performance for anything else.
+
 ## Setup
 
 
 ## Metrics
+
+
+## IOPS
+
+Importance of data
+
+[fio suite]
+
+1. Fsync latency and fsync sequential IOPS (is storage tweaked for ETCD?)
+2. LibIAO sequential IOPS  (is storage tweaked for sequential IO in general?)
+3. Concurrent IOPS  (while being tweaked for sequential IOPS, how storage can handle concurrent?)
 
 ### etcd_disk_wal_fsync_duration 99th and 99.9th
 
@@ -94,3 +114,8 @@ small cluster - even 1-2k of objects could cause issues. Cluster should be exten
 medium cluster - ~8k of objects could cause issues, having huge secrets/keys could mean problems even with lower number (~6k)
 large cluster
 huge cluster - with too heavy load and object count 10k+ it could mean that in future load will reach limits and have to be split onto several smaller clusters
+
+
+## Object size
+
+If secret holds huge token, certifikate or SSH key, it might get performance problem even with less secrets than 8k.
