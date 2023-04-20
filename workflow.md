@@ -64,13 +64,13 @@ Importance of data is in following order. Make sure you get data with highest pr
 
 1. Fsync latency and fsync sequential IOPS (is storage tweaked for ETCD?)
 2. LibIAO sequential IOPS  (is storage tweaked for sequential IO in general?)
-3. Concurrent IOPS  (while being tweaked for sequential IOPS, how storage can handle concurrent?)
+3. Random, concurrent IOPS  (while being tweaked for sequential IOPS, how storage can handle concurrent?)
 
 Never make conclusion only from one metric alone, but rather look at combination of data and importance/priority of the data.
 
 Example of small/medium cluster:
 
-| fsync seq.     | libiao seq.     | concurrent    | outcome | solution                                                                                                                      |
+| fsync seq.     | libiao seq.     | random/concurrent    | outcome | solution                                                                                                                      |
 |----------------|-----------------|---------------|---------|-------------------------------------------------------------------------------------------------------------------------------|
 | IOPS below 300 | IOPS below 1000 | 10k+ IOPS     | BAD     | storage is optimized for concurrent IOPS but ETCD requires sequential                                                         |
 | 300-600 IOPS   | 1500-2500 IOPS  | below 10k     | GOOD    |                                                                                                                               |
@@ -104,7 +104,7 @@ cleanfsynctest: (groupid=0, jobs=1): err= 0: pid=89: Tue Sep 27 16:39:22 2022
      |  1.00th=[ 1532],  5.00th=[ 1811], 10.00th=[ 1926], 20.00th=[ 2180],
      | 30.00th=[ 2704], 40.00th=[ 3130], 50.00th=[ 3294], 60.00th=[ 3490],
      | 70.00th=[ 3785], 80.00th=[ 4359], 90.00th=[ 5538], 95.00th=[ 6456],
-     | <b>99.00th=[38011]</b>, 99.50th=[43254], <b>99.90th=[62653]</b>, 99.95th=[65799],
+     | <b>99.00th=[38011]</b>, 99.50th=[43254], <b>99.90th=[62653]</b>, 99.95th=[65799],     <>
      | 99.99th=[73925]
 ```
 </pre>
