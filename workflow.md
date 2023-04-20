@@ -47,8 +47,8 @@ There's always will be pros and cons as you cannot have storage that would have 
 
 Usual scenarios:
 
-high concurrent IOPS, small sequential IOPS, variable latency - NOT GOOD, not fit for ETCD
-high sequential IOPS, super low concurrent IOPS, variable latency - NOT GOOD, too much tweaked for ETCD but lacking performance for anything else.
+* high concurrent IOPS, small sequential IOPS, variable latency - NOT GOOD, not fit for ETCD
+* high sequential IOPS, super low concurrent IOPS, variable latency - NOT GOOD, too much tweaked for ETCD but lacking performance for anything else.
 
 ## Setup
 
