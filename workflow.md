@@ -122,7 +122,7 @@ should be lower than 10ms
 
 > some versions may suggest that threshold is 20ms. Still, we evaluate how many percents close to threshold value is and asses performance risk. Values above 15ms are also not good as they are close to threshold of 20ms.
 
-Usually when 99th is close to threshold, we will see 99.9th going above threshold, which means storage can barely provide required performance (for ETCD)
+> Usually when 99th is close to threshold, we will see 99.9th going above threshold, which means storage can barely provide required performance (for ETCD) and it's really better when 99.0th is below 10ms.
 
 
 
