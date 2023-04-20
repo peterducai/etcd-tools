@@ -108,6 +108,13 @@ cleanfsynctest: (groupid=0, jobs=1): err= 0: pid=89: Tue Sep 27 16:39:22 2022
 ```
 </pre>
 
+fsync sequential IOPS
+
+* 50 - minimum, local development
+* 300 - medium cluster with average load
+* 600 - medium or large cluster
+* 900+ - large cluster with heavy load
+
 ### etcd_disk_wal_fsync_duration 99th and 99.9th
 
 should be lower than 10ms
