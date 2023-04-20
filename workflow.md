@@ -115,9 +115,9 @@ should be lower than 10ms
 
 ```
 >2ms = superb, probably NVMe on baremetal
->5ms = great
+>5ms = great, usually well performing virtualized platform
 5-7ms = OK
-8-10ms = close to threshold, NOT GOOD
+8-10ms = close to threshold, NOT GOOD if any peaks occur
 ```
 
 > some versions may suggest that threshold is 20ms. Still, we evaluate how many percents close to threshold value is and asses performance risk. Values above 15ms are also not good as they are close to threshold of 20ms.
