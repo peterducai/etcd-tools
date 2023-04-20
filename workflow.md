@@ -58,9 +58,11 @@ high sequential IOPS, super low concurrent IOPS, variable latency - NOT GOOD, to
 
 ## IOPS
 
-Importance of data
+
 
 [fio suite]
+
+Importance of data is in following order. Make sure you get data with highest priority first and examine them first:
 
 1. Fsync latency and fsync sequential IOPS (is storage tweaked for ETCD?)
 2. LibIAO sequential IOPS  (is storage tweaked for sequential IO in general?)
