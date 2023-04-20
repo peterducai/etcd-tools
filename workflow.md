@@ -118,10 +118,10 @@ should be lower than 50ms
 
 ## Object count
 
-small cluster - even 1-2k of objects could cause issues. Cluster should be extended to medium one for such workload.
-medium cluster - ~8k of objects could cause issues, having huge secrets/keys could mean problems even with lower number (~6k)
-large cluster
-huge cluster - with too heavy load and object count 10k+ it could mean that in future load will reach limits and have to be split onto several smaller clusters
+* small cluster - even 1-2k of objects could cause issues. Cluster should be extended to medium one for such workload.
+* medium cluster - ~8k of objects could cause issues, having huge secrets/keys could mean problems even with lower number (~6k)
+* large cluster
+* huge cluster - with too heavy load and object count 10k+ it could mean that in future load will reach limits and have to be split onto several smaller clusters
 
 
 ## Object size
