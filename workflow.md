@@ -80,7 +80,7 @@ Example of small/medium cluster:
 |----------------|-----------------|---------------|---------|-------------------------------------------------------------------------------------------------------------------------------|
 | IOPS below 300 | IOPS below 1000 | 10k+ IOPS     | BAD     | storage is optimized for concurrent IOPS but ETCD requires sequential                                                         |
 | 300-600 IOPS   | 1500-2500 IOPS  | below 10k     | GOOD    |                                                                                                                               |
-| 900+ IOPS      | 4000-6000+ IOPS       | very low IOPS | BAD     | storage is optimezd too much for ETCD but not for other things. High concurrent IO could degrade sequential processing a lot. |
+| 900+ IOPS      | 4000-6000+ IOPS       | very low IOPS | BAD     | storage is optimized too much for ETCD but not for other things. High concurrent IO could degrade sequential IO a lot. |
 
 **IMPORTANT:** all numbers in example are just rough estimates and shouldn't be taken as exact threshold. Don't focus just on numbers but also on gap between different values.
 
