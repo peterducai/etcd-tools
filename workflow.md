@@ -62,7 +62,7 @@ There's always will be pros and cons as you cannot have storage that would have 
 ## Metrics
 
 
-### IOPS
+## IOPS
 
 [fio suite]
 
@@ -85,9 +85,9 @@ Example of small/medium cluster:
 **IMPORTANT:** all numbers in example are just rough estimates and shouldn't be taken as exact threshold. Don't focus just on numbers but also on gap between different values.
 
 
-### Latency
+## Latency
 
-#### How to read fio/fio_suite output
+### How to read fio/fio_suite output
 
 <pre>
 ```
@@ -124,7 +124,7 @@ required fsync sequential IOPS:
 * 600 - medium or large cluster
 * 900+ - large cluster with heavy load
 
-### etcd_disk_wal_fsync_duration 99th and 99.9th
+## etcd_disk_wal_fsync_duration 99th and 99.9th
 
 should be lower than 10ms
 
@@ -140,7 +140,7 @@ should be lower than 10ms
 > Usually when 99th is close to threshold, we will see 99.9th going above threshold, which means storage can barely provide required performance (for ETCD) and it's really better when 99.0th is below 10ms.
 
 
-### etcd_disk_backend_commit_duration 99th
+## etcd_disk_backend_commit_duration 99th
 
 should be lower than 25ms
 
