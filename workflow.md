@@ -196,6 +196,8 @@ oc rsh <etcd pod>
 > etcdctl get / --prefix --keys-only | sed '/^$/d' | cut -d/ -f3 | sort | uniq -c | sort -rn
 ```
 
+or with [etcd_analyzer.sh](https://github.com/peterducai/etcd-tools/blob/main/etcd-analyzer.sh)
+
 With [cleanup_analyzer.sh](https://github.com/peterducai/etcd-tools/blob/main/cleanup-analyzer.sh) you can find out excessive number of inactive objects (images, deployments, etc..)
 
 
