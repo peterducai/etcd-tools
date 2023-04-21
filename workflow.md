@@ -129,13 +129,13 @@ required fsync sequential IOPS:
 should be lower than 10ms
 
 ```
->2ms = superb, probably NVMe on baremetal
+>2ms = superb, probably NVMe on baremetal or AWS with io1 disk and 2000 IOPS set.
 >5ms = great, usually well performing virtualized platform
 5-7ms = OK
 8-10ms = close to threshold, NOT GOOD if any peaks occur
 ```
 
-> some versions may suggest that threshold is 20ms. Still, we evaluate how many percents close to threshold value is and asses performance risk. Values above 15ms are also not good as they are close to threshold of 20ms.
+> some versions may suggest that threshold is 20ms. Still, check docs and evaluate how many percents close to threshold value is and asses performance risk. Values above 15ms are also not good as they are close to threshold of 20ms.
 
 > Usually when 99th is close to threshold, we will see 99.9th going above threshold, which means storage can barely provide required performance (for ETCD) and it's really better when 99.0th is below 10ms.
 
@@ -187,9 +187,23 @@ should be lower than 50ms. Values of 40+ mean network latency is close to thresh
 * large cluster
 * huge cluster - with too heavy load and object count 10k+ it could mean that in future load will reach limits and have to be split onto several smaller clusters
 
+You can get object count with
+
+```
+$ oc project openshift-etcd
+oc get pods
+oc rsh <etcd pod>
+> etcdctl get / --prefix --keys-only | sed '/^$/d' | cut -d/ -f3 | sort | uniq -c | sort -rn
+```
+
 With [cleanup_analyzer.sh](https://github.com/peterducai/etcd-tools/blob/main/cleanup-analyzer.sh) you can find out excessive number of inactive objects (images, deployments, etc..)
 
 
 ## Object size
 
 If secret holds huge token, certifikate or SSH key, it might get performance problem even with less secrets than 8k (on small to medium cluster).
+Check also namespaces for big amount of objects (mainly secrets). User namespace with excessive number (30+) of secrets should be ideally cleaned up.
+
+```
+oc get secrets -A --no-headers | awk '{ns[$1]++}END{for (i in ns) print i,ns[i]}'
+```
