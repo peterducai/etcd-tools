@@ -18,7 +18,7 @@ average sizing would be
 small - SNO, Edge or up to 5 workers and no infra
 medium - 10-20 workers and few infra
 large - 20+ workers and 6+ infras
-huge - 100+ workers and 10-20+ infras
+huge - 50-100+ workers and 10-20+ infras
 ```
 
 small cluster with minimum or medium resources is good only for local development or demo or SNO/Edge scenarios
@@ -44,7 +44,7 @@ RAM depends heavily on installed operators (for example logging can be quite hea
 
 ## iowait 
 
-values should be below 4.0. Values over 8.0 are alarming. Always check sizing of nodes if they have enough CPU/RAM.
+values should be below 4.0. Values over 8.0 are alarming. Always check sizing of nodes if they have enough CPU/RAM if you see high iowait.
 
 
 # Storage
@@ -62,7 +62,7 @@ There's always will be pros and cons as you cannot have storage that would have 
 ## Metrics
 
 
-## IOPS
+### IOPS
 
 [fio suite]
 
@@ -85,9 +85,9 @@ Example of small/medium cluster:
 **IMPORTANT:** all numbers in example are just rough estimates and shouldn't be taken as exact threshold. Don't focus just on numbers but also on gap between different values.
 
 
-## Latency
+### Latency
 
-## How to read fio/fio_suite output
+#### How to read fio/fio_suite output
 
 <pre>
 ```
@@ -146,11 +146,27 @@ should be lower than 25ms
 
 # Network
 
-network RTT latency: Big network latency and packet drops can also bring an unreliable etcd cluster state, so network health values (RTT and packet drops) should be monitored. 
+Big network latency and packet drops can also bring an unreliable etcd cluster state, so network health values (RTT and packet drops) should be monitored. 
 
 ## RX/TX errors and dropped packets
 
-
+<pre>
+```
+ip -s link show
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN mode DEFAULT group default qlen 1000
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+    RX:  bytes packets errors dropped  missed   mcast           
+          8296      94      0       0       0       0 
+    TX:  bytes packets errors dropped carrier collsns           
+          8296      94      0       0       0       0 
+2: enp0s31f6: <NO-CARRIER,BROADCAST,MULTICAST,UP> mtu 1500 qdisc fq_codel state UP mode DORMANT group default qlen 1000
+    link/ether 20:1e:88:99:df:2c brd ff:ff:ff:ff:ff:ff
+    RX:  bytes packets errors <b>dropped</b>  missed   mcast     <i><--- check RX/TX errors and dropped packets      
+    1993837469 1821202      0      <b>22</b>       0       0 
+    TX:  bytes packets errors dropped carrier collsns           
+     171129355  506637      0       0       0       0 
+```
+</pre>
 
 
 ## etcd_network_peer_round_trip_time 99th 
