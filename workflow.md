@@ -1,20 +1,14 @@
 # Generic
 
+Latency (network, storage) should be stable whole time as excessive peaks could mean problem for ETCD (and therefor whole cluster). Even only few minutes lasting peak in latency could mean timeout on ETCD, API and oauth pods and cause inability to login to cluster.
+
 ## Master node size
 
-### CPU
+Examine size of cluster, apart from regular sizes you could find also non-common setup which can be confusing (small cluster with too much resources or opposite).
 
-```
-minimum - 4 CPU, good only for local development or demo
-medium - 8 CPU, good for small to medium cluster with average load
-large - 16 CPU, good for small to medium cluster with heavy load (or too many operators, pipelines, etc..) or large cluster with average load
-huge - 20+ CPU, good for large cluster with heavy load
-```
+Example:
 
-### Memory
-
-RAM depends heavily on installed operators (for example logging can be quite heavy on CPU and RAM).
-
+single node (SNO) cluster running on node with 64 CPUs is stronger than 3 node cluster with 8 CPU nodes.
 
 ## Cluster size
 
@@ -29,13 +23,28 @@ huge - 100+ workers and 10-20+ infras
 
 small cluster with minimum or medium resources is good only for local development or demo or SNO/Edge scenarios
 
+### CPU
+
+Check the load (number of installed operators/pipelines and how heavy they are) and check if master nodes have enough CPU.
+
+```
+minimum - 4 CPU, good only for local development or demo
+medium - 8 CPU, good for small to medium cluster with average load
+large - 16 CPU, good for small to medium cluster with heavy load (or too many operators, pipelines, etc..) or large cluster with average load
+huge - 20+ CPU, good for large cluster with heavy load
+```
+
+### Memory
+
+RAM depends heavily on installed operators (for example logging can be quite heavy on CPU and RAM).
+
 
 
 # CPU
 
 ## iowait 
 
-values should be below 4.0. Values over 8.0 are alarming.
+values should be below 4.0. Values over 8.0 are alarming. Always check sizing of nodes if they have enough CPU/RAM.
 
 
 # Storage
@@ -45,7 +54,7 @@ values should be below 4.0. Values over 8.0 are alarming.
 
 There's always will be pros and cons as you cannot have storage that would have best concurrent IOPS but also sequential, or super high IOPS and super low latency. Customer should find balance between DB/ETCD related performance and generic (worker load) performance.
 
-Latency should be stable whole time as excessive peaks could mean problem for ETCD (and therefor whole cluster). Even only few minutes lasting peak in latency could mean timeout on ETCD, API and oauth pods and cause inability to login to cluster.
+
 
 ## Setup
 
