@@ -55,10 +55,6 @@ values should be below 4.0. Values over 8.0 are alarming. Always check sizing of
 There's always will be pros and cons as you cannot have storage that would have best concurrent IOPS but also sequential, or super high IOPS and super low latency. Customer should find balance between DB/ETCD related performance and generic (worker load) performance.
 
 
-
-## Setup
-
-
 ## Metrics
 
 
