@@ -161,7 +161,7 @@ ip -s link show
           8296      94      0       0       0       0 
 2: enp0s31f6: <NO-CARRIER,BROADCAST,MULTICAST,UP> mtu 1500 qdisc fq_codel state UP mode DORMANT group default qlen 1000
     link/ether 20:1e:88:99:df:2c brd ff:ff:ff:ff:ff:ff
-    RX:  bytes packets errors <b>dropped</b>  missed   mcast     <i><--- check RX/TX errors and dropped packets      
+    RX:  bytes packets errors <b>dropped</b>  missed   mcast     <i><--- check RX/TX errors and dropped packets     </i> 
     1993837469 1821202      0      <b>22</b>       0       0 
     TX:  bytes packets errors dropped carrier collsns           
      171129355  506637      0       0       0       0 
