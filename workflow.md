@@ -2,6 +2,9 @@
 
 Latency (network, storage) should be stable whole time as excessive peaks could mean problem for ETCD (and therefor whole cluster). Even only few minutes lasting peak in latency could mean timeout on ETCD, API and oauth pods and cause inability to login to cluster.
 
+
+
+
 ## Master node size
 
 Examine size of cluster, apart from regular sizes you could find also non-common setup which can be confusing (small cluster with too much resources or opposite).
@@ -64,7 +67,7 @@ There's always will be pros and cons as you cannot have storage that would have 
 
 Importance of data is in following order. Make sure you get data with highest priority first and examine them first. 
 
-1. Fsync latency and fsync sequential IOPS (is storage tweaked for ETCD?)
+1. Fsync latency and fsync sequential IOPS (is storage tweaked for ETCD?) [How to graph etcd metrics using Prometheus to gauge Etcd performance in OpenShift](https://access.redhat.com/solutions/5489721)
 2. LibIAO sequential IOPS  (is storage tweaked for sequential IO in general?)
 3. Random, concurrent IOPS  (while being tweaked for sequential IOPS, how storage can handle concurrent?)
 
@@ -205,3 +208,21 @@ Check also namespaces for big amount of objects (mainly secrets). User namespace
 ```
 oc get secrets -A --no-headers | awk '{ns[$1]++}END{for (i in ns) print i,ns[i]}'
 ```
+
+
+<!-- ## FAQ
+
+> Our own etcd is a little different due to rhel and some sidecar binary:
+
+https://github.com/openshift/etcd/blob/openshift-4.14/Dockerfile.rhel
+
+https://github.com/openshift/etcd/blob/openshift-4.14/Dockerfile.art
+
+> When running “etcdctl endpoint health”, what does the “successfully commited proposal: took = xxxx ms” metric represents?
+
+health is entirely implemented on the [client](https://github.com/etcd-io/etcd/blob/release-3.5/etcdctl/ctlv3/command/ep_command.go#L126-L131)
+It's a simple linearized read request that goes through raft over the network. As it's a get, the apply doesn't go through the disk.
+
+> There are no supported/documented/tested methods for moving OCP VMs on vsphere between datastores. 
+
+The only method we officially recommend or support would be a reinstallation. With this being considered a production cluster I understand that likely is not an option. It was mentioned that previously you have migrated the backing storage for datastores at the Netapp side in a method that is transparent to both OCP and Vsphere. That likely will be your best bet. Just make sure to test thoroughly as this is not something we test ourselves.  -->

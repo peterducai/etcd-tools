@@ -47,19 +47,14 @@ Run
 
 > ./fio_suite.sh
 
-<!-- or thru podman/docker
+or on RHCOS/Openshift
 
-> podman run --volume /$(pwd):/test:Z quay.io/peterducai/openshift-etcd-suite:latest fio
-
-but on RHCOS run
-
-> podman run --privileged --volume /$(pwd):/test quay.io/peterducai/openshift-etcd-suite:latest fio
-
-or to benchmark disk where ETCD resides
-
-> podman run --privileged --volume /var/lib/etcd:/test quay.io/peterducai/openshift-etcd-suite:latest fio
-
-**NOTE:** don't run it in / or /home/user as its top folder and you get Selinux error -->
+```
+$ oc debug node/<master_node>
+  [...]
+  sh-4.4# chroot /host bash
+  podman run --privileged --volume /var/lib/etcd:/test quay.io/peterducai/openshift-etcd-suite:latest fio
+```
 
 
 <!-- 
