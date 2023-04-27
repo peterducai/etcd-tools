@@ -135,7 +135,7 @@ LIBAIO is generic sequential test and <b>doesn't exactly emulate how ETCD works<
 1GB file transfer:
   read: IOPS=10.3k, BW=40.3MiB/s (42.2MB/s)(471MiB/11683msec)
   write: IOPS=4444, BW=17.4MiB/s (18.2MB/s)(203MiB/11683msec); 0 zone resets
-SEQUENTIAL WRITE IOPS: 4444                              <i><--- 4.4k is more than 30% of read IOPS so it's OK</i>
+SEQUENTIAL WRITE IOPS: 4444                              <i><--- <b>4.4k is more than 30% of read IOPS so it's OK</b></i>
 SEQUENTIAL READ IOPS: 10000                              <i><--- 10k is pretty high number</i>
 --------------------------
 
@@ -143,8 +143,8 @@ SEQUENTIAL READ IOPS: 10000                              <i><--- 10k is pretty h
 
   read: IOPS=10.3k, BW=40.3MiB/s (42.2MB/s)(471MiB/11683msec)
   write: IOPS=4444, BW=17.4MiB/s (18.2MB/s)(203MiB/11683msec); 0 zone resets
-SEQUENTIAL WRITE IOPS: 200                              <i><--- 200 is less than 30% of 2500 read IOPS so it's bad.. also 200 is pretty low number</i>
-SEQUENTIAL READ IOPS: 2500                              <i><--- 2.5k is fine, but obviously storage cannot keep up with writing, while reading</i>
+SEQUENTIAL WRITE IOPS: 200                              <i><--- <b>200 is less than 30% of 2500 read IOPS so it's bad..</b> also 200 is pretty low number</i>
+SEQUENTIAL READ IOPS: 2500                              <i><--- 2.5k is fine, but obviously <b>storage cannot keep up with writing, while reading</b></i>
 --------------------------
 
 <i>EXAMPLE3:</i>
@@ -152,7 +152,7 @@ SEQUENTIAL READ IOPS: 2500                              <i><--- 2.5k is fine, bu
   read: IOPS=10.3k, BW=40.3MiB/s (42.2MB/s)(471MiB/11683msec)
   write: IOPS=4444, BW=17.4MiB/s (18.2MB/s)(203MiB/11683msec); 0 zone resets
 SEQUENTIAL WRITE IOPS: 250                              <i><--- 250 is close to 30% of 800 read IOPS so it's OK.. but 250 is pretty low number for medium or large cluster</i>
-SEQUENTIAL READ IOPS: 800                               <i><--- 800 is not enough for serious workload</i>
+SEQUENTIAL READ IOPS: 800                               <i><--- 800 is <b>not enough for serious workload</b></i>
 --------------------------
 
 ...
