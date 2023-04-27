@@ -88,6 +88,13 @@ Example of small/medium cluster:
 
 ### How to read fio/fio_suite output
 
+```
+$ oc debug node/<master_node>
+  [...]
+  sh-4.4# chroot /host bash
+  podman run --privileged --volume /var/lib/etcd:/test quay.io/peterducai/openshift-etcd-suite:latest fio
+```
+
 <pre>
 ```
 cleanfsynctest: (groupid=0, jobs=1): err= 0: pid=89: Tue Sep 27 16:39:22 2022
@@ -114,7 +121,69 @@ cleanfsynctest: (groupid=0, jobs=1): err= 0: pid=89: Tue Sep 27 16:39:22 2022
      | <b>99.00th=[38011]</b>, 99.50th=[43254], <b>99.90th=[62653]</b>, 99.95th=[65799],     <i><--- 99.0th and 99.9th percentile that should be below 10k</i>
      | 99.99th=[73925]
 ```
+```
+[ SEQUENTIAL IOPS TEST ] - [ libaio engine SINGLE JOB, 70% read, 30% write]
+
+--------------------------
+1GB file transfer:
+  read: IOPS=10.3k, BW=40.3MiB/s (42.2MB/s)(471MiB/11683msec)
+  write: IOPS=4444, BW=17.4MiB/s (18.2MB/s)(203MiB/11683msec); 0 zone resets
+SEQUENTIAL WRITE IOPS: 4444                                                                  <i><--- 4.4k is more than 30% of read IOPS so it's OK</i>
+SEQUENTIAL READ IOPS: 10000                                                                  <i><--- 10k is pretty high number</i>
+--------------------------
+--------------------------
+200MB file transfer:
+  read: IOPS=13.8k, BW=53.7MiB/s (56.3MB/s)(140MiB/2608msec)
+  write: IOPS=5881, BW=23.0MiB/s (24.1MB/s)(59.9MiB/2608msec); 0 zone resets
+SEQUENTIAL WRITE IOPS: 5881
+SEQUENTIAL READ IOPS: 13000
+--------------------------
+
+-- [ libaio engine SINGLE JOB, 30% read, 70% write] --
+
+--------------------------
+200MB file transfer:
+  read: IOPS=6517, BW=25.5MiB/s (26.7MB/s)(60.2MiB/2366msec)
+  write: IOPS=15.1k, BW=59.1MiB/s (61.9MB/s)(140MiB/2366msec); 0 zone resets
+SEQUENTIAL WRITE IOPS: 15000
+SEQUENTIAL READ IOPS: 6517
+--------------------------
+
+--------------------------
+1GB file transfer:
+  read: IOPS=5893, BW=23.0MiB/s (24.1MB/s)(68.7MiB/2986msec)
+  write: IOPS=13.7k, BW=53.7MiB/s (56.3MB/s)(160MiB/2986msec); 0 zone resets
+SEQUENTIAL WRITE IOPS: 13000
+SEQUENTIAL READ IOPS: 5893
+```
+```
+[ RANDOM IOPS TEST ] - REQUEST OVERHEAD AND SEEK TIMES] ---
+This job is a latency-sensitive workload that stresses per-request overhead and seek times. Random reads.
+
+
+1GB file transfer:
+  read: IOPS=55.1k, BW=215MiB/s (226MB/s)(1024MiB/4757msec)
+--------------------------
+RANDOM IOPS: 55000
+--------------------------
+
+200MB file transfer:
+  read: IOPS=55.1k, BW=215MiB/s (226MB/s)(200MiB/929msec)
+--------------------------
+RANDOM IOPS: 55000
+--------------------------
+```
 </pre>
+
+
+OUTCOME:
+
+- fsync 230 IOPS are OK for small cluster but not for medium
+- fsync latency of 62ms is too high (should be below 10k)
+- libiao IOPS values are super good
+- concurrent/random IOPS are huge.. 55k
+
+
 
 required fsync sequential IOPS:
 
