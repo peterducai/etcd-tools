@@ -219,7 +219,10 @@ OUTCOME:
 - fsync 230 IOPS are OK for small cluster but not for medium
 - fsync latency of 62ms is too high (should be below 10k)
 - libiao IOPS values are super good
-- concurrent/random IOPS are huge.. 55k
+- concurrent/random IOPS are huge .. 55k, while we don't need such high numbers at all.
+
+
+FYI this example is from Thinkapd with NVMe and running CRC (without CRC numbers are even better).
 
 
 
