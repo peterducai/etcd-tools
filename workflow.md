@@ -126,6 +126,9 @@ cleanfsynctest: (groupid=0, jobs=1): err= 0: pid=89: Tue Sep 27 16:39:22 2022
 
 <pre>
 ```
+
+LIBAIO is generic sequential test and <b>doesn't exactly emulate how ETCD works</b>, rather emulates generic sequential IO.
+
 [ SEQUENTIAL IOPS TEST ] - [ libaio engine SINGLE JOB, 70% read, 30% write]
 
 --------------------------
