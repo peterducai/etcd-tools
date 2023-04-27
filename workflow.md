@@ -224,7 +224,7 @@ OUTCOME:
 
 FYI this example is from Thinkapd with NVMe and running CRC (without CRC numbers are even better).
 
-
+**IMPORTANT: Each storage behaves differently under different conditions and you should figure out which part of storage should be tweak (by customer/vendor)**
 
 
 
