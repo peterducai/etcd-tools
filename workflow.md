@@ -7,11 +7,27 @@ Latency (network, storage) should be stable whole time as excessive peaks could 
 
 ## Master node size
 
-Examine size of cluster, apart from regular sizes you could find also non-common setup which can be confusing (small cluster with too much resources or opposite).
+Customer should understand that
+
+- masters are most important nodes and therefor they should have best resources (CPU, storage, networking)
+- with Openshift, only 3 masters are supported no matter how big cluster is (and bigger the cluster, more resources are needed on masters)
+- for best performance, virtualized masters should have dedicated storage/LUN and be hosted on dedicated hypervisor (not shared with other VMs)
+
+There is no exact formula, but masters should be sized depending on load (mainly load on API and ETCD caused by operators or pipelines).
+
+What to do:
+
+Examine size of cluster, apart from regular sizes *you could find also non-common setup or size which can be confusing* (small cluster with too many resources or opposite).
 
 Example:
 
-single node (SNO) cluster running on node with 64 CPUs is stronger than 3 node cluster with 8 CPU nodes.
+1. 3 worker node running heavy DB can be more overloaded than same size cluster running light nginx containers.
+2. single node (SNO) cluster running on node with 64 CPUs is stronger than 3 node cluster with 8 CPU nodes.
+3. cluster with 120 workers and no infra nodes
+
+Check number of operators and pods and asses if load is not too big for size of the cluster/nodes.
+
+
 
 ## Cluster size
 
