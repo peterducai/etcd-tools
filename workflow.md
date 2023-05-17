@@ -2,7 +2,7 @@
 
 Latency (network, storage) should be stable whole time as excessive peaks could mean problem for ETCD (and therefor whole cluster). Even only few minutes lasting peak in latency could mean timeout on ETCD, API and oauth pods and cause inability to login to cluster.
 
-
+**ETCD performance depends mainly on storage, CPU and network latency, but be aware it can be combination of all of them and focusing on single part is bad idea!**
 
 
 ## Master node size
@@ -66,6 +66,8 @@ RAM depends heavily on installed operators (for example logging can be quite hea
 ## iowait 
 
 values should be below 4.0. Values over 8.0 are alarming. Always check sizing of nodes if they have enough CPU/RAM if you see high iowait.
+
+
 
 
 # Storage
