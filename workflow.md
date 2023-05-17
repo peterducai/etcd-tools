@@ -40,7 +40,7 @@ large - 20+ workers and 6+ infras
 huge - 50-100+ workers and 10-20+ infras
 ```
 
-small cluster with minimum or medium resources is good only for local development or demo or SNO/Edge scenarios
+**small cluster with minimum or medium resources is good only for local development or demo or SNO/Edge scenarios**
 
 ### CPU
 
@@ -52,6 +52,8 @@ medium - 8 CPU, good for small to medium cluster with average load
 large - 16 CPU, good for small to medium cluster with heavy load (or too many operators, pipelines, etc..) or large cluster with average load
 huge - 20+ CPU, good for large cluster with heavy load
 ```
+
+
 
 ### Memory
 
@@ -83,8 +85,8 @@ required fsync sequential IOPS:
 
 * 50 - minimum, local development
 * 300 - medium cluster with average load
-* 600 - medium or large cluster
-* 900+ - large cluster with heavy load
+* 500 - medium or large cluster
+* 800+ - large cluster with heavy load
 
 [fio suite]
 
@@ -95,6 +97,7 @@ Importance of data is in following order. Make sure you get data with highest pr
 3. Random, concurrent IOPS  (while being tweaked for sequential IOPS, how storage can handle concurrent?)
 
 Never make conclusion only from one metric alone, but rather look at combination of data and importance/priority of the data.
+**ETCD metrics are most important to see how data change over time. Never make conclusion from data that describe only one specific moment!**
 
 Example of small/medium cluster:
 
