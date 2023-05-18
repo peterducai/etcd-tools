@@ -10,6 +10,7 @@ Latency (network, storage) should be stable whole time as excessive peaks could 
 Customer should understand that
 
 - masters are most important nodes and therefor they should have best resources (CPU, storage, networking)
+- masters should have dedicated resources, mixing master and worker workload can cause cluster stability issues
 - with Openshift, only 3 masters are supported no matter how big cluster is (and bigger the cluster, more resources are needed on masters)
 - for best performance, virtualized masters should have dedicated storage/LUN and be hosted on dedicated hypervisor (not shared with other VMs)
 
