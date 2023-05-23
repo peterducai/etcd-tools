@@ -185,8 +185,8 @@ etcd_overload() {
     if [ "$OVERLOAD" != "0" ]; then
       echo -e "${RED}[WARNING]${NONE} we found $OVERLOAD overloaded messages in $1"
       echo -e ""
-      echo -e "'dropped internal Raft message since sending buffer is full (overloaded network)' found $OVERLOADN times in $1  (high network or remote storage latency)"
-      echo -e "'leader failed to send out heartbeat on time; took too long, leader is overloaded likely from slow disk' found $OVERLOADC times in $1  (slow storage or lack of CPU on masters)"
+      echo -e "$OVERLOADN x OVERLOADED NETWORK in $1  (high network or remote storage latency)"
+      echo -e "$OVERLOADC x OVERLOADED DISK/CPU in $1  (slow storage or lack of CPU on masters)"
       echo -e ""
       echo -e "Last occurrence:"
       echo -e "$LAST"| cut -d " " -f1
@@ -201,13 +201,13 @@ etcd_overload() {
 
 etcd_took_too_long() {
     TOOKS_MS=()
-    MS=$(cat $1/etcd/etcd/logs/current.log|grep 'took too long'|tail -1)
+    MS=$(cat $1/etcd/etcd/logs/current.log|grep 'apply request took too long'|tail -1)
     echo $MS
-    TOOK=$(cat $1/etcd/etcd/logs/current.log|grep 'took too long'|wc -l)
-    SUMMARY=$(cat $1/etcd/etcd/logs/current.log |awk -v min=999 '/took too long/ {t++} /context deadline exceeded/ {b++} /finished scheduled compaction/ {gsub("\"",""); sub("ms}",""); split($0,a,":"); if (a[12]<min) min=a[12]; if (a[12]>max) max=a[12]; avg+=a[12]; c++} END{printf "took too long: %d\ndeadline exceeded: %d\n",t,b; printf "compaction times:\n  min: %d\n  max: %d\n  avg:%d\n",min,max,avg/c}'
+    TOOK=$(cat $1/etcd/etcd/logs/current.log|grep 'apply request took too long'|wc -l)
+    SUMMARY=$(cat $1/etcd/etcd/logs/current.log |awk -v min=999 '/apply request took too long/ {t++} /context deadline exceeded/ {b++} /finished scheduled compaction/ {gsub("\"",""); sub("ms}",""); split($0,a,":"); if (a[12]<min) min=a[12]; if (a[12]>max) max=a[12]; avg+=a[12]; c++} END{printf "took too long: %d\ndeadline exceeded: %d\n",t,b; printf "compaction times:\n  min: %d\n  max: %d\n  avg:%d\n",min,max,avg/c}'
 )
     if [ "$PLOT" = true ]; then
-      for lines in $(cat $1/etcd/etcd/logs/current.log||grep "took too long"|grep -ohE "took\":\"[0-9]+(.[0-9]+)ms"|cut -c8-);
+      for lines in $(cat $1/etcd/etcd/logs/current.log||grep "apply request took too long"|grep -ohE "took\":\"[0-9]+(.[0-9]+)ms"|cut -c8-);
       do
         TOOKS_MS+=("$lines");
         if [ "$lines" != "}" ]; then
@@ -219,7 +219,7 @@ etcd_took_too_long() {
       gnuplot_render $1 "${#TOOKS_MS[@]}" "took too long messages" "Sample number" "Took (ms)" "tooktoolong_graph" "$REPORT_FOLDER/$1-long.data"
     fi
     if [ "$TOOK" != "0" ]; then
-      echo -e "${RED}[WARNING]${NONE} we found $TOOK took too long messages in $1"
+      echo -e "${RED}[WARNING]${NONE} we found $TOOK 'apply request took too long' messages in $1"
       echo -e "$SUMMARY"
       TK=$(($TK+$TOOK))
       echo -e ""
