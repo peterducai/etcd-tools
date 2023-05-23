@@ -178,10 +178,16 @@ EOM
 
 etcd_overload() {
     OVERLOAD=$(cat $1/etcd/etcd/logs/current.log|grep 'overload'|wc -l)
+    OVERLOADN=$(cat $1/etcd/etcd/logs/current.log|grep 'overload'|grep network|wc -l)
+    OVERLOADC=$(cat $1/etcd/etcd/logs/current.log|grep 'overload'|grep disk|wc -l)
     LAST=$(cat $1/etcd/etcd/logs/current.log|grep 'overload'|tail -1)
     LOGEND=$(cat $1/etcd/etcd/logs/current.log|tail -1)
     if [ "$OVERLOAD" != "0" ]; then
-      echo -e "${RED}[WARNING]${NONE} we found $OVERLOAD 'server is likely overloaded' messages in $1"
+      echo -e "${RED}[WARNING]${NONE} we found $OVERLOAD overloaded messages in $1"
+      echo -e ""
+      echo -e "'dropped internal Raft message since sending buffer is full (overloaded network)' found $OVERLOADN times in $1  (high network or remote storage latency)"
+      echo -e "'leader failed to send out heartbeat on time; took too long, leader is overloaded likely from slow disk' found $OVERLOADC times in $1  (slow storage or lack of CPU on masters)"
+      echo -e ""
       echo -e "Last occurrence:"
       echo -e "$LAST"| cut -d " " -f1
       echo -e "Log ends at "
