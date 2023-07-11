@@ -19,3 +19,9 @@
 {"level":"info","ts":"2023-07-11T13:29:39.914Z","caller":"mvcc/kvstore_compaction.go:66","msg":"finished scheduled compaction","compact-revision":47722,"took":"936.419892ms","hash":3148454985}
 {"level":"info","ts":"2023-07-11T13:34:39.298Z","caller":"mvcc/kvstore_compaction.go:66","msg":"finished scheduled compaction","compact-revision":48703,"took":"287.872238ms","hash":816200036}
 {"level":"info","ts":"2023-07-11T13:39:39.307Z","caller":"mvcc/kvstore_compaction.go:66","msg":"finished scheduled compaction","compact-revision":49738,"took":"287.656338ms","hash":3723855867}
+{"level":"info","ts":"2023-07-11T13:44:40.157Z","caller":"mvcc/kvstore_compaction.go:66","msg":"finished scheduled compaction","compact-revision":50725,"took":"1.125458596s","hash":460077236}
+{"level":"info","ts":"2023-07-11T13:49:40.608Z","caller":"mvcc/kvstore_compaction.go:66","msg":"finished scheduled compaction","compact-revision":51728,"took":"1.555956509s","hash":2575071025}
+{"level":"info","ts":"2023-07-11T13:54:40.586Z","caller":"mvcc/kvstore_compaction.go:66","msg":"finished scheduled compaction","compact-revision":52757,"took":"1.523211143s","hash":319768909}
+{"level":"info","ts":"2023-07-11T13:59:39.508Z","caller":"mvcc/kvstore_compaction.go:66","msg":"finished scheduled compaction","compact-revision":53754,"took":"435.474608ms","hash":3403686659}
+{"level":"info","ts":"2023-07-11T14:04:40.226Z","caller":"mvcc/kvstore_compaction.go:66","msg":"finished scheduled compaction","compact-revision":54754,"took":"1.127370637s","hash":2111826875}
+{"level":"info","ts":"2023-07-11T14:09:39.438Z","caller":"mvcc/kvstore_compaction.go:66","msg":"finished scheduled compaction","compact-revision":55771,"took":"300.32881ms","hash":3028610043}

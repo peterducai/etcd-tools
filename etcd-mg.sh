@@ -271,6 +271,18 @@ etcd_leader() {
 }
 
 
+compaction_test() {
+  
+
+cat comp.txt| while read line 
+do
+   CHECK=$(echo $line |tail -12|cut -d ':' -f10| rev | cut -c9- | rev|cut -c2- |grep -E '[0-9]')
+   #echo $CHECK |grep -E '[0-9]s'
+   #[ -z "$(echo $CHECK |grep -E '[0-9]s')" ] && echo $CHECK
+   [[ ! -z "$(echo $CHECK |grep -E '[0-9]s')" ]] && echo "$CHECK <---- TOO HIGH!" || echo $CHECK
+done
+}
+
 etcd_compaction() {
   #WORKER+=("${filename::-5}")
   COMPACTIONS_MS=()
@@ -289,8 +301,9 @@ etcd_compaction() {
           echo $lines >> $REPORT_FOLDER/$1-comp.data
         fi
       done
-    gnuplot_render $1 "${#COMPACTIONS_MS[@]}" "ETCD compaction (ms)" "Sample number" "Compaction (ms)" "compaction_graph" "$REPORT_FOLDER/$1-comp.data"
+    #gnuplot_render $1 "${#COMPACTIONS_MS[@]}" "ETCD compaction (ms)" "Sample number" "Compaction (ms)" "compaction_graph" "$REPORT_FOLDER/$1-comp.data"
     fi
+
 
     echo "found ${#COMPACTIONS_MS[@]} compaction entries"
     echo -e ""
@@ -303,20 +316,6 @@ etcd_compaction() {
     echo -e ""
     echo -e "last 5 compaction entries:"
     cat $1/etcd/etcd/logs/current.log|grep "compaction"| grep -v downgrade| grep -E "[0-9]+(.[0-9]+)ms"|grep -o '[^,]*$'| cut -d":" -f2|grep -oP '"\K[^"]+'|tail -5
-    ;;
-  4.7*)
-    echo -e "[highest seconds]"
-    cat $1/etcd/etcd/logs/current.log | grep "compaction"| grep -E "[0-9]+(.[0-9]+)s"|cut -d " " -f13| cut -d ')' -f 1 |sort|tail -6
-    echo -e ""
-    echo -e "[highest ms]"
-    cat $1/etcd/etcd/logs/current.log | grep "compaction"| grep -E "[0-9]+(.[0-9]+)ms"|cut -d " " -f13| cut -d ')' -f 1 |sort|tail -6
-    ;;
-  4.6*)
-    echo -e "[highest seconds]"
-    cat $1/etcd/etcd/logs/current.log | grep "compaction"| grep -E "[0-9]+(.[0-9]+)s"|cut -d " " -f13| cut -d ')' -f 1 |sort|tail -6 #was f12, but doesnt work on some gathers
-    echo -e ""
-    echo -e "[highest ms]"
-    cat $1/etcd/etcd/logs/current.log | grep "compaction"| grep -E "[0-9]+(.[0-9]+)ms"|cut -d " " -f13| cut -d ')' -f 1 |sort|tail -6 #was f12, but doesnt work on some gathers
     ;;
   *)
     echo -e "unknown version ${OCP_VERSION} !"

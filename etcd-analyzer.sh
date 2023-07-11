@@ -86,7 +86,6 @@ TOKEN=$(oc whoami -t)
 
 
 compaction_test() {
-  
 
 cat comp.txt| while read line 
 do
@@ -95,6 +94,37 @@ do
    #[ -z "$(echo $CHECK |grep -E '[0-9]s')" ] && echo $CHECK
    [[ ! -z "$(echo $CHECK |grep -E '[0-9]s')" ]] && echo "$CHECK <---- TOO HIGH!" || echo $CHECK
 done
+}
+
+overload_test() {
+  echo -e ""
+  $CLIENT logs $i -c etcd -n $ETCDNS|grep overloaded > $OUTPUT_PATH/over.txt
+  LAST=$(cat $OUTPUT_PATH/over.txt|tail -1 |cut -d ':' -f3|cut -c 2-11)
+  LOGEND=$(cat $OUTPUT_PATH/over.txt|tail -1 |cut -d ':' -f3|cut -c 2-11)
+
+  if [[ "$(cat $OUTPUT_PATH/over.txt|wc -l)" -eq 0 ]];
+  then
+     echo "no overloaded message - EXCELLENT"
+  else
+    echo -e "Found $($CLIENT logs $i -c etcd -n $ETCDNS|grep overloaded|wc -l) overloaded messages.. last seen on $LOGEND"
+  fi
+  echo -e ""
+}
+
+leaderchanged_test_tooktoolong() {
+  $CLIENT logs $i -c etcd -n $ETCDNS|grep 'leader changed' > $OUTPUT_PATH/leaderchanged.txt
+  LAST=$(cat $OUTPUT_PATH/leaderchanged.txt|tail -1cut -d ':' -f3|cut -c 2-11)
+  LOGEND=$(cat $OUTPUT_PATH/leaderchanged.txt|tail -1cut -d ':' -f3|cut -c 2-11)
+  
+  echo -e "Found $(cat $OUTPUT_PATH/leaderchanged.txt|wc -l) took too long due to leader changed messages.. last seen on $LOGEND"
+}
+
+leaderchanged_test() {
+  $CLIENT logs $i -c etcd -n $ETCDNS|grep 'elected leader' > $OUTPUT_PATH/elected.txt
+  LAST=$(cat $OUTPUT_PATH/elected.txt|tail -1|cut -d ':' -f3|cut -c 2-11)
+  LOGEND=$(cat $OUTPUT_PATH/elected.txt|tail -1|cut -d ':' -f3|cut -c 2-11)
+  
+  echo -e "Found $(cat $OUTPUT_PATH/elected.txt|wc -l) took too long due to leader changed messages.. last seen on $LOGEND"
 }
 
 analyze_members() {
@@ -116,13 +146,16 @@ analyze_members() {
     echo -e "LOGS \nstart on $($CLIENT logs $i -c etcd -n $ETCDNS|head -60|tail -1|cut -d ':' -f3|cut -c 2-14)"
     echo -e "ends on $($CLIENT logs $i -c etcd -n $ETCDNS|tail -1|cut -d ':' -f3|cut -c 2-14)"
     echo -e ""
-    echo -e "Found $($CLIENT logs $i -c etcd -n $ETCDNS|grep overloaded|wc -l) overloaded messages"
+    
+    overload_test
+
     echo -e "Found $($CLIENT logs $i -c etcd -n $ETCDNS|grep 'took too long'|wc -l) took too long messages"
     echo -e "Found $($CLIENT logs $i -c etcd -n $ETCDNS|grep 'slow fdatasync'|wc -l) slow fdatasync messages"
     echo -e "Found $($CLIENT logs $i -c etcd -n $ETCDNS|grep clock|wc -l) clock difference messages"
     echo -e "Found $($CLIENT logs $i -c etcd -n $ETCDNS|grep heartbeat|wc -l) heartbeat messages"
     echo -e "Found $($CLIENT logs $i -c etcd -n $ETCDNS|grep 'database space exceeded'|wc -l) database space exceeded messages"
-    echo -e "Found $($CLIENT logs $i -c etcd -n $ETCDNS|grep 'leader changed'|wc -l) took too long due to leader changed messages"
+    leaderchanged_test
+    
     echo -e "Found $($CLIENT logs $i -c etcd -n $ETCDNS|grep 'elected leader'|wc -l) leader changed messages"
     echo -e ""
     $CLIENT logs $i -c etcd -n $ETCDNS|grep compaction > comp.txt
