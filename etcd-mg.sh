@@ -282,7 +282,7 @@ etcd_compaction() {
   4.9*|4.8*|4.1*)
     echo "# compaction" > $REPORT_FOLDER/$1.data
     if [ "$PLOT" == true ]; then
-      for lines in $(cat $1/etcd/etcd/logs/current.log|grep "compaction"| grep -v downgrade| grep -E "[0-9]+(.[0-9]+)ms"|grep -o '[^,]*$'| cut -d":" -f2|grep -oP '"\K[^"]+');
+      for lines in $(cat $1/etcd/etcd/logs/current.log|grep "compaction"| grep -v downgrade| grep -E "[0-9]+(.[0-9]+)ms"|grep -o '[^,]*$'| cut -d":" -f2);
       do
         COMPACTIONS_MS+=("$lines");
         if [ "$lines" != "}" ]; then

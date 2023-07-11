@@ -85,7 +85,17 @@ echo -e "API URL: $API"
 TOKEN=$(oc whoami -t)
 
 
+compaction_test() {
+  
 
+cat comp.txt| while read line 
+do
+   CHECK=$(echo $line |tail -12|cut -d ':' -f10| rev | cut -c9- | rev|cut -c2- |grep -E '[0-9]')
+   #echo $CHECK |grep -E '[0-9]s'
+   #[ -z "$(echo $CHECK |grep -E '[0-9]s')" ] && echo $CHECK
+   [[ ! -z "$(echo $CHECK |grep -E '[0-9]s')" ]] && echo "$CHECK <---- TOO HIGH!" || echo $CHECK
+done
+}
 
 analyze_members() {
   for i in ${ETCD[@]}; do
@@ -115,13 +125,17 @@ analyze_members() {
     echo -e "Found $($CLIENT logs $i -c etcd -n $ETCDNS|grep 'leader changed'|wc -l) took too long due to leader changed messages"
     echo -e "Found $($CLIENT logs $i -c etcd -n $ETCDNS|grep 'elected leader'|wc -l) leader changed messages"
     echo -e ""
-    echo -e "COMPACTION: \n$($CLIENT logs $i -c etcd -n $ETCDNS|grep compaction|tail -8|cut -d ':' -f10|cut -c 2-12)"
+    $CLIENT logs $i -c etcd -n $ETCDNS|grep compaction > comp.txt
+    echo -e "COMPACTION:"
+    compaction_test
     echo -e ""
     echo -e "---------------------"
     echo -e ""
   done
   
 }
+
+
 
 
 analyze_members
@@ -133,14 +147,21 @@ analyze_members
 echo -e ""
 echo -e "[NUMBER OF OBJECTS IN ETCD]"
 echo -e ""
-$CLIENT exec -n $ETCDNS $i -c etcdctl -n $ETCDNS -- etcdctl get / --prefix --keys-only | sed '/^$/d' | cut -d/ -f3 | sort | uniq -c | sort -rn|head -14
+$CLIENT exec -n $ETCDNS $i -c etcdctl -n $ETCDNS -- etcdctl get / --prefix --keys-only > keysonly.txt
+cat keysonly.txt | sed '/^$/d' | cut -d/ -f3 | sort | uniq -c | sort -rn|head -14
+echo -e "       ..."
+cat keysonly.txt | sed '/^$/d' | cut -d/ -f3 | sort | uniq -c | sort -rn|tail -6
 echo -e ""
 
 echo -e "[MOST EVENTS keys]"
 echo -e ""
-$CLIENT exec -n $ETCDNS $i -c etcdctl -n $ETCDNS -- etcdctl get / --prefix --keys-only > keysonly.txt
-cat keysonly.txt|grep event  |cut -d/ -f3,4| sort | uniq -c | sort -n --rev| head -10
-echo -e "..."
+cat keysonly.txt|grep event  |cut -d/ -f3,4| sort | uniq -c | sort -n --rev| head -14
+echo -e "      ..."
+cat keysonly.txt|grep event  |cut -d/ -f3-4| sort | uniq -c | sort -n --rev| tail -6
+echo -e ""
+cat keysonly.txt|grep event  |cut -d/ -f3,5| sort | uniq -c | sort -n --rev| head -14
+echo -e "      ..."
+cat keysonly.txt|grep event  |cut -d/ -f3-5| sort | uniq -c | sort -n --rev| tail -6
 #cat keysonly.txt | grep event |cut -d/ -f3,4,5| sort | uniq -c | sort -n --rev |head -10
 
 # oc exec $i  -c etcdctl -n $ETCDNS --  etcdctl watch / --prefix  --write-out=fields > fields.txt
