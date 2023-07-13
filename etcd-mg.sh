@@ -271,51 +271,24 @@ etcd_leader() {
 }
 
 
-compaction_test() {
-  
-
-cat comp.txt| while read line 
-do
-   CHECK=$(echo $line |tail -12|cut -d ':' -f10| rev | cut -c9- | rev|cut -c2- |grep -E '[0-9]')
-   #echo $CHECK |grep -E '[0-9]s'
-   #[ -z "$(echo $CHECK |grep -E '[0-9]s')" ] && echo $CHECK
-   [[ ! -z "$(echo $CHECK |grep -E '[0-9]s')" ]] && echo "$CHECK <---- TOO HIGH!" || echo $CHECK
-done
-}
 
 etcd_compaction() {
-  #WORKER+=("${filename::-5}")
-  COMPACTIONS_MS=()
-  COMPACTIONS_SEC=()
 
-  echo -e "- $1"
+  echo -e "etcd compaction on $1"
   # echo -e ""
   case "${OCP_VERSION}" in
   4.9*|4.8*|4.1*)
-    echo "# compaction" > $REPORT_FOLDER/$1.data
-    if [ "$PLOT" == true ]; then
-      for lines in $(cat $1/etcd/etcd/logs/current.log|grep "compaction"| grep -v downgrade| grep -E "[0-9]+(.[0-9]+)ms"|grep -o '[^,]*$'| cut -d":" -f2);
-      do
-        COMPACTIONS_MS+=("$lines");
-        if [ "$lines" != "}" ]; then
-          echo $lines >> $REPORT_FOLDER/$1-comp.data
-        fi
-      done
-    #gnuplot_render $1 "${#COMPACTIONS_MS[@]}" "ETCD compaction (ms)" "Sample number" "Compaction (ms)" "compaction_graph" "$REPORT_FOLDER/$1-comp.data"
-    fi
-
-
-    echo "found ${#COMPACTIONS_MS[@]} compaction entries"
-    echo -e ""
-
-    echo -e "[highest (seconds)]"
-    cat $1/etcd/etcd/logs/current.log|grep "compaction"| grep -v downgrade| grep -E "[0-9]+(.[0-9]+)s"|grep -o '[^,]*$'| cut -d":" -f2|grep -oP '"\K[^"]+'|sort| tail -4
-    echo -e ""
-    echo -e "[highest (ms)]"
-    cat $1/etcd/etcd/logs/current.log|grep "compaction"| grep -v downgrade| grep -E "[0-9]+(.[0-9]+)ms"|grep -o '[^,]*$'| cut -d":" -f2|grep -oP '"\K[^"]+'|sort| tail -4
-    echo -e ""
-    echo -e "last 5 compaction entries:"
-    cat $1/etcd/etcd/logs/current.log|grep "compaction"| grep -v downgrade| grep -E "[0-9]+(.[0-9]+)ms"|grep -o '[^,]*$'| cut -d":" -f2|grep -oP '"\K[^"]+'|tail -5
+    #echo "# compaction" > $OUTPUT_PATH/$1.data
+    cat $1/etcd/etcd/logs/current.log|grep compaction| tail -20 > $OUTPUT_PATH/$1-compat.data
+    
+    cat $OUTPUT_PATH/$1-compat.data| while read line 
+    do
+      # echo $line|tail -12|cut -d ':' -f12| rev | cut -c9- | rev|cut -c2- |grep -E '[0-9]'
+      # echo $line|tail -12|cut -d ':' -f10| rev | cut -c9- | rev|cut -c2- |grep -E '[0-9]'
+      # echo $line|tail -12|cut -d ':' -f10| rev | cut -c9- | rev|cut -c2- |grep -E '[0-9]'
+      CHECK=$(echo $line|tail -12|cut -d ':' -f12| rev | cut -c9- | rev|cut -c2- |grep -E '[0-9]')
+      [[ ! -z "$(echo $CHECK |grep -E '[0-9]s')" ]] && echo "$CHECK <---- TOO HIGH!" || echo $CHECK
+    done
     ;;
   *)
     echo -e "unknown version ${OCP_VERSION} !"
@@ -471,8 +444,7 @@ leader_check() {
 compaction_check() {
   echo -e ""
   echo -e "[COMPACTION]"
-  echo -e "should be ideally below 100ms (and below 10ms on fast SSD/NVMe)"
-  echo -e "anything above 300ms could mean serious performance issues (including issues with oc login)"
+  echo -e "should be ideally below 100ms (and below 10ms on fast SSD/NVMe) on small clusters, 300-500 on medium or large and no more than 800-900ms on very large clusters."
   echo -e ""
   for member in $(ls |grep -v "revision"|grep -v "quorum"|grep -v "guard"); do
     etcd_compaction $member

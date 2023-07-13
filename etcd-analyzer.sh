@@ -104,9 +104,13 @@ overload_test() {
 
   if [[ "$(cat $OUTPUT_PATH/over.txt|wc -l)" -eq 0 ]];
   then
-     echo "no overloaded message - EXCELLENT"
+     echo "no overloaded message - EXCELLENT!"
   else
-    echo -e "Found $($CLIENT logs $i -c etcd -n $ETCDNS|grep overloaded|wc -l) overloaded messages.. last seen on $LOGEND"
+    echo -e "Found $(cat $OUTPUT_PATH/over.txt|grep overloaded |wc -l) overloaded messages while there should be zero of them.. last seen on $LOGEND"
+    OVERLOADN=$(cat $OUTPUT_PATH/over.txt|grep 'overload'|grep network|wc -l)
+    OVERLOADC=$(cat $OUTPUT_PATH/over.txt|grep 'overload'|grep disk|wc -l)
+    echo -e "$OVERLOADN x OVERLOADED NETWORK in $1  (high network or remote storage latency)"
+    echo -e "$OVERLOADC x OVERLOADED DISK/CPU in $1  (slow storage or lack of CPU on masters)"
   fi
   echo -e ""
 }
