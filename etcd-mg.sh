@@ -177,27 +177,25 @@ EOM
 }
 
 etcd_overload() {
-    OVERLOAD=$(cat $1/etcd/etcd/logs/current.log|grep 'overload'|wc -l)
-    OVERLOADN=$(cat $1/etcd/etcd/logs/current.log|grep 'overload'|grep network|wc -l)
-    OVERLOADC=$(cat $1/etcd/etcd/logs/current.log|grep 'overload'|grep disk|wc -l)
-    LAST=$(cat $1/etcd/etcd/logs/current.log|grep 'overload'|tail -1)
-    LOGEND=$(cat $1/etcd/etcd/logs/current.log|tail -1)
-    if [ "$OVERLOAD" != "0" ]; then
-      echo -e "${RED}[WARNING]${NONE} we found $OVERLOAD overloaded messages in $1"
-      echo -e ""
-      echo -e "$OVERLOADN x OVERLOADED NETWORK in $1  (high network or remote storage latency)"
-      echo -e "$OVERLOADC x OVERLOADED DISK/CPU in $1  (slow storage or lack of CPU on masters)"
-      echo -e ""
-      echo -e "Last occurrence:"
-      echo -e "$LAST"| cut -d " " -f1
-      echo -e "Log ends at "
-      echo -e "$LOGEND"| cut -d " " -f1
-      echo -e ""
-      OVRL=$(($OVRL+$OVERLOAD))
-    # else
-    #   echo -e "${GREEN}[OK]${NONE} zero messages in $1"
-    fi
+  echo -e ""
+  OVERLOAD=$(cat $1/etcd/etcd/logs/current.log|grep 'overload'|wc -l)
+  OVERLOADN=$(cat $1/etcd/etcd/logs/current.log|grep 'overload'|grep network|wc -l)
+  OVERLOADC=$(cat $1/etcd/etcd/logs/current.log|grep 'overload'|grep disk|wc -l)
+  LAST=$(cat $1/etcd/etcd/logs/current.log|grep 'overload'|tail -1 |cut -d ':' -f1|cut -c 1-10)
+  LOGEND=$(cat $1/etcd/etcd/logs/current.log|grep 'overload'|tail -1 |cut -d ':' -f1|cut -c 1-10)
+
+  if [[ "$OVERLOAD" -eq 0 ]];
+  then
+     echo "no overloaded message - EXCELLENT!"
+  else
+    echo -e "Found $OVERLOAD overloaded messages while there should be zero of them.. last seen on $LOGEND"
+    echo -e "details:"
+    echo -e "$OVERLOADN x OVERLOADED NETWORK in $1  (high network or remote storage latency)"
+    echo -e "$OVERLOADC x OVERLOADED DISK/CPU in $1  (slow storage or lack of CPU on masters)"
+  fi
+  echo -e ""
 }
+
 
 etcd_took_too_long() {
     TOOKS_MS=()
@@ -314,11 +312,11 @@ overload_check() {
     for member in $(ls |grep -v "revision"|grep -v "quorum"|grep -v "guard"); do
       etcd_overload $member
     done
-    echo -e "Found together $OVRL 'server is likely overloaded' messages."
-    echo -e ""
-    if [[ $OVRL -ne "0" ]];then
-        overload_solution
-    fi
+    # echo -e "Found together $OVRL 'server is likely overloaded' messages."
+    # echo -e ""
+    # if [[ $OVRL -ne "0" ]];then
+    #     overload_solution
+    # fi
 }
 
 tooklong_solution() {
