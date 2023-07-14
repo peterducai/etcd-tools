@@ -182,16 +182,17 @@ etcd_overload() {
   OVERLOADN=$(cat $1/etcd/etcd/logs/current.log|grep 'overload'|grep network|wc -l)
   OVERLOADC=$(cat $1/etcd/etcd/logs/current.log|grep 'overload'|grep disk|wc -l)
   LAST=$(cat $1/etcd/etcd/logs/current.log|grep 'overload'|tail -1 |cut -d ':' -f1|cut -c 1-10)
-  LOGEND=$(cat $1/etcd/etcd/logs/current.log|grep 'overload'|tail -1 |cut -d ':' -f1|cut -c 1-10)
-
+  LOGEND=$(cat $1/etcd/etcd/logs/current.log|tail -1 |cut -d ':' -f1|cut -c 1-10)
+  echo -e "$1"
   if [[ "$OVERLOAD" -eq 0 ]];
   then
      echo "no overloaded message - EXCELLENT!"
   else
-    echo -e "Found $OVERLOAD overloaded messages while there should be zero of them.. last seen on $LOGEND"
+    echo -e "Found $OVERLOAD overloaded messages while there should be zero of them.. last seen on $LAST"
     echo -e "details:"
     echo -e "$OVERLOADN x OVERLOADED NETWORK in $1  (high network or remote storage latency)"
     echo -e "$OVERLOADC x OVERLOADED DISK/CPU in $1  (slow storage or lack of CPU on masters)"
+    echo -e "Log ends on $LOGEND"
   fi
   echo -e ""
 }
