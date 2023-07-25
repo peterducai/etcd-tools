@@ -7,6 +7,11 @@ REPORT_FOLDER="$HOME/ETCD-SUMMARY_$STAMP"
 ORIG_PATH=$(pwd)
 OUTPUT_PATH=$ORIG_PATH/DATA
 
+NODES=()
+MASTER=()
+INFRA=()
+WORKER=()
+
 mkdir -p $REPORT_FOLDER
 echo "created $REPORT_FOLDER"
 
@@ -48,12 +53,9 @@ cd ../persistentvolumes
 PV_NUMBER=$(ls|wc -l)
 echo -e "There are $PV_NUMBER PVs in cluster"
 
-cd ../nodes
 
-NODES=()
-MASTER=()
-INFRA=()
-WORKER=()
+
+
 
 # help_etcd_objects() {
 #   echo -e ""
@@ -107,7 +109,7 @@ WORKER=()
 
 
 # LIST NODES
-
+cd ../nodes
 for filename in *.yaml; do
     [ -e "$filename" ] || continue
     [ ! -z "$(cat $filename |grep node-role|grep -w 'node-role.kubernetes.io/master:')" ] && MASTER+=("${filename::-5}") && NODES+=("$filename [master]") || true
@@ -123,20 +125,29 @@ for filename in *.yaml; do
     [ ! -z "$(cat $filename |grep node-role|grep -w 'node-role.kubernetes.io/worker:')" ] && WORKER+=("${filename::-5}")  && NODES+=("$filename [worker]") || true
 done
 
-echo -e ""
-# echo ${NODES[@]}
 
 echo -e "${#MASTER[@]} masters"
-if [ "${#MASTER[@]}" != "3" ]; then
-  echo -e "[WARNING] only 3 masters are supported, you have ${#MASTER[@]}."
+
+# check if there's no more than supported number of masters (which is 3)
+if (( ${#MASTER[@]} > 3 )); then
+    echo -e "[WARNING] only 3 masters are supported, you have ${#MASTER[@]}."
 fi
-printf "%s\n" "${MASTER[@]}"
-echo -e ""
-echo -e "${#INFRA[@]} infra nodes"
-printf "%s\n" "${INFRA[@]}"
-echo -e ""
-echo -e "${#WORKER[@]} worker nodes"
-printf "%s\n" "${WORKER[@]}"
+
+# check if any master is missing
+if (( ${#MASTER[@]} < 3 )); then
+    echo -e "[WARNING] you have only ${#MASTER[@]}. Investigate SOSreport from missing one!"
+fi
+
+echo -e "${#INFRA[@]} masters"
+
+# check for infra nodes and suggest consideration 
+if (( ${#INFRA[@]} < 1 )); then
+    echo -e "[WARNING] no INFRA nodes. Condsider adding infra to offload masters."
+fi
+
+echo -e "${#WORKER[@]} masters"
+
+
 
 # for i in ${NODES[@]}; do echo $i; done
 
