@@ -11,6 +11,7 @@ NODES=()
 MASTER=()
 INFRA=()
 WORKER=()
+ETCD=()
 
 mkdir -p $REPORT_FOLDER
 echo "created $REPORT_FOLDER"
@@ -31,14 +32,18 @@ cd $MUST_PATH
 cd $(echo */)
 # ls
 
+
+#TODO
 if [ -z "$3" ]; then
   OCP_VERSION=$(cat cluster-scoped-resources/config.openshift.io/clusterversions.yaml |grep "Cluster version is"| grep -Po "(\d+\.)+\d+")
 else
   OCP_VERSION=$3
 fi
 
+
 if [ -z "$OCP_VERSION" ]; then
   echo -e "Cluster version is EMPTY! Script cannot be run without defining proper version!"
+  echo -e "FYI cluster version file might be missing or corrupted due to upgrade (moving between versions)."
   echo -e "Run script with: ./etcd.sh <path to must-gather> false 4.10     # for 4.10 or replace with your version"
 else
   echo -e "Cluster version is $OCP_VERSION"
@@ -130,22 +135,22 @@ echo -e "${#MASTER[@]} masters"
 
 # check if there's no more than supported number of masters (which is 3)
 if (( ${#MASTER[@]} > 3 )); then
-    echo -e "[WARNING] only 3 masters are supported, you have ${#MASTER[@]}."
+    echo -e "    [WARNING] only 3 masters are supported, you have ${#MASTER[@]}."
 fi
 
 # check if any master is missing
 if (( ${#MASTER[@]} < 3 )); then
-    echo -e "[WARNING] you have only ${#MASTER[@]}. Investigate SOSreport from missing one!"
+    echo -e "    [WARNING] you have only ${#MASTER[@]}. Investigate SOSreport from missing one!"
 fi
 
-echo -e "${#INFRA[@]} masters"
+echo -e "${#INFRA[@]} infra nodes"
 
 # check for infra nodes and suggest consideration 
 if (( ${#INFRA[@]} < 1 )); then
-    echo -e "[WARNING] no INFRA nodes. Condsider adding infra to offload masters."
+    echo -e "    [WARNING] no INFRA nodes. Condsider adding infra to offload masters."
 fi
 
-echo -e "${#WORKER[@]} masters"
+echo -e "${#WORKER[@]} workers"
 
 
 
@@ -154,9 +159,70 @@ echo -e "${#WORKER[@]} masters"
 
 cd $MUST_PATH
 cd $(echo */)
-cd namespaces/openshift-etcd/pods
+
 echo -e ""
 echo -e "[ETCD]"
+cd namespaces/openshift-etcd/pods
+for dirs in $(ls |grep -v guard|grep -v installer|grep -v quorum); do
+    [ -e "$dirs" ] || continue
+    [ ! -z "$(ls |grep -v guard|grep -v installer|grep -v quorum)" ] && ETCD+=("${dirs}") || true
+    #echo -e "adding $dirs"
+done
+# check if there's no more than supported number of masters (which is 3)
+if (( ${#ETCD[@]} > 3 )); then
+    echo -e "    [WARNING] only 3 etcd members are supported, you have ${#ETCD[@]}."
+fi
+
+# check if any master is missing
+if (( ${#ETCD[@]} < 3 )); then
+    echo -e "    [WARNING] you have only ${#ETCD[@]} etcd members. Investigate logs from missing one!"
+fi
+
+echo -e "${#ETCD[@]} etcd members"
+for member in "${ETCD[@]}"; do
+  echo -e "\n[$member]\n"
+  echo -e ""
+  OVERLOAD=$(cat $member/etcd/etcd/logs/current.log|grep 'overload'|wc -l)
+  OVERLOADN=$(cat $member/etcd/etcd/logs/current.log|grep 'overload'|grep network|wc -l)
+  OVERLOADC=$(cat $member/etcd/etcd/logs/current.log|grep 'overload'|grep disk|wc -l)
+  LAST=$(cat $member/etcd/etcd/logs/current.log|grep 'overload'|tail -1 |cut -d ':' -f1|cut -c 1-10)
+  LOGEND=$(cat $member/etcd/etcd/logs/current.log|tail -1 |cut -d ':' -f1|cut -c 1-10)
+  if [[ "$OVERLOAD" -eq 0 ]];
+  then
+     echo "no overloaded message - ${GREEN}[OK]${NONE}OK!"
+  else
+    echo -e "${RED}[WARNING]${NONE} Found $OVERLOAD overloaded messages while there should be zero of them."
+    echo -e ""
+    echo -e "$OVERLOADN x OVERLOADED NETWORK in $member  (high network or remote storage latency)"
+    echo -e "$OVERLOADC x OVERLOADED DISK/CPU in $member  (slow storage or lack of CPU on masters)"
+    echo -e ""
+    echo -e "Last seen on $LAST"
+    echo -e "Log ends on $LOGEND"
+  fi
+  echo -e ""
+  TOOK=$(cat $member/etcd/etcd/logs/current.log|grep 'apply request took too long'|wc -l)
+  if [ "$TOOK" != "0" ]; then
+    echo -e "${RED}[WARNING]${NONE} we found $TOOK 'apply request took too long' messages"
+    echo -e "$SUMMARY"
+    TK=$(($TK+$TOOK))
+    echo -e ""
+  else
+    echo -e "no 'apply request took too long' messages"
+  fi
+  echo -e ""
+  # cat $member/etcd/etcd/logs/current.log|grep compaction| tail -20 > $OUTPUT_PATH/$member-compat.data
+    
+  # cat $OUTPUT_PATH/$member-compat.data| while read line 
+  # do
+  #   CHECK=$(echo $line|tail -6|cut -d ':' -f12| rev | cut -c9- | rev|cut -c2- |grep -E '[0-9]')
+  #   [[ ! -z "$(echo $CHECK |grep -E '[0-9]s')" ]] && echo "$CHECK <---- TOO HIGH!" || echo $CHECK
+  # done
+  echo -e ""
+done
+
+
+echo -e ""
+
 
 OVRL=0
 NTP=0
@@ -165,78 +231,57 @@ TK=0
 LED=0
 
 
-gnuplot_render() {
-      cat > $REPORT_FOLDER/etcd-$1.plg <<- EOM
-#! /usr/bin/gnuplot
-
-set terminal png
-set title '$3'
-set xlabel '$4'
-set ylabel '$5'
-
-set autoscale
-set xrange [1:$2]
-set yrange [1:800]
-
-# labels
-#set label "- GOOD" at 0, 100
-#set label "- BAD" at 0, 300
-#set label "- SUPER BAD" at 0, 500
-
-plot '$7' with lines
-EOM
-
-    gnuplot  $REPORT_FOLDER/etcd-$1.plg > $REPORT_FOLDER/$1$6.png
-}
-
-etcd_overload() {
-  echo -e ""
-  OVERLOAD=$(cat $1/etcd/etcd/logs/current.log|grep 'overload'|wc -l)
-  OVERLOADN=$(cat $1/etcd/etcd/logs/current.log|grep 'overload'|grep network|wc -l)
-  OVERLOADC=$(cat $1/etcd/etcd/logs/current.log|grep 'overload'|grep disk|wc -l)
-  LAST=$(cat $1/etcd/etcd/logs/current.log|grep 'overload'|tail -1 |cut -d ':' -f1|cut -c 1-10)
-  LOGEND=$(cat $1/etcd/etcd/logs/current.log|tail -1 |cut -d ':' -f1|cut -c 1-10)
-  echo -e "$1"
-  if [[ "$OVERLOAD" -eq 0 ]];
-  then
-     echo "no overloaded message - EXCELLENT!"
-  else
-    echo -e "Found $OVERLOAD overloaded messages while there should be zero of them.. last seen on $LAST"
-    echo -e "details:"
-    echo -e "$OVERLOADN x OVERLOADED NETWORK in $1  (high network or remote storage latency)"
-    echo -e "$OVERLOADC x OVERLOADED DISK/CPU in $1  (slow storage or lack of CPU on masters)"
-    echo -e "Log ends on $LOGEND"
-  fi
-  echo -e ""
-}
 
 
-etcd_took_too_long() {
-    TOOKS_MS=()
-    MS=$(cat $1/etcd/etcd/logs/current.log|grep 'apply request took too long'|tail -1)
-    echo $MS
-    TOOK=$(cat $1/etcd/etcd/logs/current.log|grep 'apply request took too long'|wc -l)
-    SUMMARY=$(cat $1/etcd/etcd/logs/current.log |awk -v min=999 '/apply request took too long/ {t++} /context deadline exceeded/ {b++} /finished scheduled compaction/ {gsub("\"",""); sub("ms}",""); split($0,a,":"); if (a[12]<min) min=a[12]; if (a[12]>max) max=a[12]; avg+=a[12]; c++} END{printf "took too long: %d\ndeadline exceeded: %d\n",t,b; printf "compaction times:\n  min: %d\n  max: %d\n  avg:%d\n",min,max,avg/c}'
-)
-    # if [ "$PLOT" = true ]; then
-    #   for lines in $(cat $1/etcd/etcd/logs/current.log||grep "apply request took too long"|grep -ohE "took\":\"[0-9]+(.[0-9]+)ms"|cut -c8-);
-    #   do
-    #     TOOKS_MS+=("$lines");
-    #     if [ "$lines" != "}" ]; then
-    #       echo $lines >> $REPORT_FOLDER/$1-long.data
-    #     fi
-    #   done
-    # fi
-    # if [ "$PLOT" = true ]; then
-    #   gnuplot_render $1 "${#TOOKS_MS[@]}" "took too long messages" "Sample number" "Took (ms)" "tooktoolong_graph" "$REPORT_FOLDER/$1-long.data"
-    # fi
-    if [ "$TOOK" != "0" ]; then
-      echo -e "${RED}[WARNING]${NONE} we found $TOOK 'apply request took too long' messages in $1"
-      echo -e "$SUMMARY"
-      TK=$(($TK+$TOOK))
-      echo -e ""
-    fi
-}
+
+# etcd_overload() {
+#   echo -e ""
+#   OVERLOAD=$(cat $1/etcd/etcd/logs/current.log|grep 'overload'|wc -l)
+#   OVERLOADN=$(cat $1/etcd/etcd/logs/current.log|grep 'overload'|grep network|wc -l)
+#   OVERLOADC=$(cat $1/etcd/etcd/logs/current.log|grep 'overload'|grep disk|wc -l)
+#   LAST=$(cat $1/etcd/etcd/logs/current.log|grep 'overload'|tail -1 |cut -d ':' -f1|cut -c 1-10)
+#   LOGEND=$(cat $1/etcd/etcd/logs/current.log|tail -1 |cut -d ':' -f1|cut -c 1-10)
+#   echo -e "$1"
+#   if [[ "$OVERLOAD" -eq 0 ]];
+#   then
+#      echo "no overloaded message - EXCELLENT!"
+#   else
+#     echo -e "Found $OVERLOAD overloaded messages while there should be zero of them.. last seen on $LAST"
+#     echo -e "details:"
+#     echo -e "$OVERLOADN x OVERLOADED NETWORK in $1  (high network or remote storage latency)"
+#     echo -e "$OVERLOADC x OVERLOADED DISK/CPU in $1  (slow storage or lack of CPU on masters)"
+#     echo -e "Log ends on $LOGEND"
+#   fi
+#   echo -e ""
+# }
+
+
+# etcd_took_too_long() {
+#     TOOKS_MS=()
+#     MS=$(cat $1/etcd/etcd/logs/current.log|grep 'apply request took too long'|tail -1)
+#     echo $MS
+#     TOOK=$(cat $1/etcd/etcd/logs/current.log|grep 'apply request took too long'|wc -l)
+#     SUMMARY=$(cat $1/etcd/etcd/logs/current.log |awk -v min=999 '/apply request took too long/ {t++} /context deadline exceeded/ {b++} /finished scheduled compaction/ {gsub("\"",""); sub("ms}",""); split($0,a,":"); if (a[12]<min) min=a[12]; if (a[12]>max) max=a[12]; avg+=a[12]; c++} END{printf "took too long: %d\ndeadline exceeded: %d\n",t,b; printf "compaction times:\n  min: %d\n  max: %d\n  avg:%d\n",min,max,avg/c}'
+# )
+#     # if [ "$PLOT" = true ]; then
+#     #   for lines in $(cat $1/etcd/etcd/logs/current.log||grep "apply request took too long"|grep -ohE "took\":\"[0-9]+(.[0-9]+)ms"|cut -c8-);
+#     #   do
+#     #     TOOKS_MS+=("$lines");
+#     #     if [ "$lines" != "}" ]; then
+#     #       echo $lines >> $REPORT_FOLDER/$1-long.data
+#     #     fi
+#     #   done
+#     # fi
+#     # if [ "$PLOT" = true ]; then
+#     #   gnuplot_render $1 "${#TOOKS_MS[@]}" "took too long messages" "Sample number" "Took (ms)" "tooktoolong_graph" "$REPORT_FOLDER/$1-long.data"
+#     # fi
+#     if [ "$TOOK" != "0" ]; then
+#       echo -e "${RED}[WARNING]${NONE} we found $TOOK 'apply request took too long' messages in $1"
+#       echo -e "$SUMMARY"
+#       TK=$(($TK+$TOOK))
+#       echo -e ""
+#     fi
+# }
 
 etcd_ntp() {
     CLOCK=$(cat $1/etcd/etcd/logs/current.log|grep 'clock difference'|wc -l)
@@ -309,6 +354,16 @@ etcd_compaction() {
   echo -e ""
 }
 
+
+#COMPATION
+
+echo -e ""
+echo -e "[COMPACTION]"
+echo -e "should be ideally below 100ms (and below 10ms on fast SSD/NVMe) on small clusters, 300-500 on medium or large and no more than 800-900ms on very large clusters."
+echo -e ""
+for member in "${ETCD[@]}"; do
+  etcd_compaction $member
+done
 
 
 # MAIN FUNCS
@@ -453,20 +508,20 @@ leader_check() {
     fi
 }
 
-compaction_check() {
-  echo -e ""
-  echo -e "[COMPACTION]"
-  echo -e "should be ideally below 100ms (and below 10ms on fast SSD/NVMe) on small clusters, 300-500 on medium or large and no more than 800-900ms on very large clusters."
-  echo -e ""
-  for member in $(ls |grep -v "revision"|grep -v "quorum"|grep -v "guard"); do
-    etcd_compaction $member
-  done
-  echo -e ""
-  # echo -e "  Found together $LED 'leader changed' messages."
-  # if [[ $LED -ne "0" ]];then
-  #     leader_solution
-  # fi
-}
+# compaction_check() {
+#   echo -e ""
+#   echo -e "[COMPACTION]"
+#   echo -e "should be ideally below 100ms (and below 10ms on fast SSD/NVMe) on small clusters, 300-500 on medium or large and no more than 800-900ms on very large clusters."
+#   echo -e ""
+#   for member in $(ls |grep -v "revision"|grep -v "quorum"|grep -v "guard"); do
+#     etcd_compaction $member
+#   done
+#   echo -e ""
+#   # echo -e "  Found together $LED 'leader changed' messages."
+#   # if [[ $LED -ne "0" ]];then
+#   #     leader_solution
+#   # fi
+# }
 
 
 audit_logs() {
