@@ -43,8 +43,8 @@ fi
 
 if [ -z "$OCP_VERSION" ]; then
   echo -e "Cluster version is EMPTY! Script cannot be run without defining proper version!"
-  echo -e "FYI cluster version file might be missing or corrupted due to upgrade (moving between versions)."
-  echo -e "Run script with: ./etcd.sh <path to must-gather> false 4.10     # for 4.10 or replace with your version"
+  echo -e "IMPORTANT: cluster version file might be missing or corrupted due to ongoing upgrade (moving between versions)."
+  echo -e "Run script with: ./etcd.sh <path to must-gather> false 4.12     # for 4.12 or replace with your version"
 else
   echo -e "Cluster version is $OCP_VERSION"
 fi
@@ -130,12 +130,14 @@ for filename in *.yaml; do
     [ ! -z "$(cat $filename |grep node-role|grep -w 'node-role.kubernetes.io/worker:')" ] && WORKER+=("${filename::-5}")  && NODES+=("$filename [worker]") || true
 done
 
-
+echo -e ""
+echo -e "${GREEN}NODES:${NONE}"
+echo -e ""
 echo -e "${#MASTER[@]} masters"
 
 # check if there's no more than supported number of masters (which is 3)
 if (( ${#MASTER[@]} > 3 )); then
-    echo -e "    [WARNING] only 3 masters are supported, you have ${#MASTER[@]}."
+    echo -e "    ${RED}[WARNING] only 3 masters are supported, you have ${#MASTER[@]}.${NONE}"
 fi
 
 # check if any master is missing
@@ -163,9 +165,9 @@ cd $(echo */)
 echo -e ""
 echo -e "[ETCD]"
 cd namespaces/openshift-etcd/pods
-for dirs in $(ls |grep -v guard|grep -v installer|grep -v quorum); do
+for dirs in $(ls |grep -v guard|grep -v installer|grep -v quorum|grep -v pruner); do
     [ -e "$dirs" ] || continue
-    [ ! -z "$(ls |grep -v guard|grep -v installer|grep -v quorum)" ] && ETCD+=("${dirs}") || true
+    [ ! -z "$(ls |grep -v guard|grep -v installer|grep -v quorum|grep -v pruner)" ] && ETCD+=("${dirs}") || true
     #echo -e "adding $dirs"
 done
 # check if there's no more than supported number of masters (which is 3)
@@ -189,7 +191,7 @@ for member in "${ETCD[@]}"; do
   LOGEND=$(cat $member/etcd/etcd/logs/current.log|tail -1 |cut -d ':' -f1|cut -c 1-10)
   if [[ "$OVERLOAD" -eq 0 ]];
   then
-     echo "no overloaded message - ${GREEN}[OK]${NONE}OK!"
+     echo -e "no overloaded message - ${GREEN}OK!${NONE}"
   else
     echo -e "${RED}[WARNING]${NONE} Found $OVERLOAD overloaded messages while there should be zero of them."
     echo -e ""
@@ -202,21 +204,23 @@ for member in "${ETCD[@]}"; do
   echo -e ""
   TOOK=$(cat $member/etcd/etcd/logs/current.log|grep 'apply request took too long'|wc -l)
   if [ "$TOOK" != "0" ]; then
-    echo -e "${RED}[WARNING]${NONE} we found $TOOK 'apply request took too long' messages"
+    echo -e "${RED}[WARNING]${NONE} we found $TOOK 'apply request took too long' messages. (You should be concerned only with several thousands of messages)"
     echo -e "$SUMMARY"
     TK=$(($TK+$TOOK))
     echo -e ""
   else
     echo -e "no 'apply request took too long' messages"
   fi
+
+
   echo -e ""
-  # cat $member/etcd/etcd/logs/current.log|grep compaction| tail -20 > $OUTPUT_PATH/$member-compat.data
+  cat $member/etcd/etcd/logs/current.log|grep compaction| tail -68 > $OUTPUT_PATH/$member-compat.data
     
-  # cat $OUTPUT_PATH/$member-compat.data| while read line 
-  # do
-  #   CHECK=$(echo $line|tail -6|cut -d ':' -f12| rev | cut -c9- | rev|cut -c2- |grep -E '[0-9]')
-  #   [[ ! -z "$(echo $CHECK |grep -E '[0-9]s')" ]] && echo "$CHECK <---- TOO HIGH!" || echo $CHECK
-  # done
+  cat $OUTPUT_PATH/$member-compat.data| while read line 
+  do
+    CHECK=$(echo $line|tail -8|cut -d ':' -f12| rev | cut -c9- | rev|cut -c2- |grep -E '[0-9]')
+    [[ ! -z "$(echo $CHECK |grep -E '[0-9]s')" ]] && echo "$CHECK <---- TOO HIGH!" || echo $CHECK
+  done
   echo -e ""
 done
 
@@ -231,29 +235,6 @@ TK=0
 LED=0
 
 
-
-
-
-# etcd_overload() {
-#   echo -e ""
-#   OVERLOAD=$(cat $1/etcd/etcd/logs/current.log|grep 'overload'|wc -l)
-#   OVERLOADN=$(cat $1/etcd/etcd/logs/current.log|grep 'overload'|grep network|wc -l)
-#   OVERLOADC=$(cat $1/etcd/etcd/logs/current.log|grep 'overload'|grep disk|wc -l)
-#   LAST=$(cat $1/etcd/etcd/logs/current.log|grep 'overload'|tail -1 |cut -d ':' -f1|cut -c 1-10)
-#   LOGEND=$(cat $1/etcd/etcd/logs/current.log|tail -1 |cut -d ':' -f1|cut -c 1-10)
-#   echo -e "$1"
-#   if [[ "$OVERLOAD" -eq 0 ]];
-#   then
-#      echo "no overloaded message - EXCELLENT!"
-#   else
-#     echo -e "Found $OVERLOAD overloaded messages while there should be zero of them.. last seen on $LAST"
-#     echo -e "details:"
-#     echo -e "$OVERLOADN x OVERLOADED NETWORK in $1  (high network or remote storage latency)"
-#     echo -e "$OVERLOADC x OVERLOADED DISK/CPU in $1  (slow storage or lack of CPU on masters)"
-#     echo -e "Log ends on $LOGEND"
-#   fi
-#   echo -e ""
-# }
 
 
 # etcd_took_too_long() {
@@ -329,41 +310,16 @@ etcd_leader() {
 
 
 
-etcd_compaction() {
-
-  echo -e "etcd compaction on $1"
-  # echo -e ""
-  case "${OCP_VERSION}" in
-  4.9*|4.8*|4.1*)
-    #echo "# compaction" > $OUTPUT_PATH/$1.data
-    cat $1/etcd/etcd/logs/current.log|grep compaction| tail -20 > $OUTPUT_PATH/$1-compat.data
-    
-    cat $OUTPUT_PATH/$1-compat.data| while read line 
-    do
-      # echo $line|tail -12|cut -d ':' -f12| rev | cut -c9- | rev|cut -c2- |grep -E '[0-9]'
-      # echo $line|tail -12|cut -d ':' -f10| rev | cut -c9- | rev|cut -c2- |grep -E '[0-9]'
-      # echo $line|tail -12|cut -d ':' -f10| rev | cut -c9- | rev|cut -c2- |grep -E '[0-9]'
-      CHECK=$(echo $line|tail -12|cut -d ':' -f12| rev | cut -c9- | rev|cut -c2- |grep -E '[0-9]')
-      [[ ! -z "$(echo $CHECK |grep -E '[0-9]s')" ]] && echo "$CHECK <---- TOO HIGH!" || echo $CHECK
-    done
-    ;;
-  *)
-    echo -e "unknown version ${OCP_VERSION} !"
-    ;;
-  esac
-  echo -e ""
-}
-
 
 #COMPATION
 
-echo -e ""
-echo -e "[COMPACTION]"
-echo -e "should be ideally below 100ms (and below 10ms on fast SSD/NVMe) on small clusters, 300-500 on medium or large and no more than 800-900ms on very large clusters."
-echo -e ""
-for member in "${ETCD[@]}"; do
-  etcd_compaction $member
-done
+# echo -e ""
+# echo -e "[COMPACTION]"
+# echo -e "should be ideally below 100ms (and below 10ms on fast SSD/NVMe) on small clusters, 300-500 on medium or large and no more than 800-900ms on very large clusters."
+# echo -e ""
+# for member in "${ETCD[@]}"; do
+#   etcd_compaction $member
+# done
 
 
 # MAIN FUNCS
@@ -556,14 +512,6 @@ audit_logs() {
 
 # timed out waiting for read index response (local node might have slow network)
 
-compaction_check
-overload_check
-tooklong_check
-ntp_check
-# heart_check
-space_check
-leader_check
-audit_logs
 
 
 echo -e ""
