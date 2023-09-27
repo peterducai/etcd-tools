@@ -15,6 +15,7 @@ ETCD=()
 
 mkdir -p $REPORT_FOLDER
 echo "created $REPORT_FOLDER"
+echo -e ""
 
 # TERMINAL COLORS -----------------------------------------------------------------
 
@@ -28,37 +29,216 @@ VIOLET='\033[35m'
 CYAN='\033[36m'
 GREY='\033[37m'
 
+
+# MAIN --------------------------
 cd $MUST_PATH
 cd $(echo */)
 # ls
 
 
-#TODO
-if [ -z "$3" ]; then
-  OCP_VERSION=$(cat cluster-scoped-resources/config.openshift.io/clusterversions.yaml |grep "Cluster version is"| grep -Po "(\d+\.)+\d+")
-else
-  OCP_VERSION=$3
-fi
+# CLUSTER VERSION ---------------
 
-
+[ -e "cluster-scoped-resources/config.openshift.io/clusterversions.yaml" ] && OCP_VERSION=$(cat cluster-scoped-resources/config.openshift.io/clusterversions.yaml |grep "Cluster version is"| grep -Po "(\d+\.)+\d+") || echo -e "no clusterversion.yaml found."
+  
 if [ -z "$OCP_VERSION" ]; then
-  echo -e "Cluster version is EMPTY! Script cannot be run without defining proper version!"
+  echo -e "Cluster version is EMPTY!"
   echo -e "IMPORTANT: cluster version file might be missing or corrupted due to ongoing upgrade (moving between versions)."
-  echo -e "Run script with: ./etcd.sh <path to must-gather> false 4.12     # for 4.12 or replace with your version"
 else
   echo -e "Cluster version is $OCP_VERSION"
 fi
 echo -e ""
 
+
+
+
+# LIST NODES --------------------
+
 cd cluster-scoped-resources/core/nodes
 NODES_NUMBER=$(ls|wc -l)
 echo -e "There are $NODES_NUMBER nodes in cluster"
 
-cd ../persistentvolumes
-PV_NUMBER=$(ls|wc -l)
-echo -e "There are $PV_NUMBER PVs in cluster"
+[ -d "../persistentvolumes" ] && PV_NUMBER=$(ls|wc -l) && echo -e "There are $PV_NUMBER PVs in cluster" || echo "No PV files found."
+
+cd ../nodes
+for filename in *.yaml; do
+    [ -e "$filename" ] || continue
+    [ ! -z "$(cat $filename |grep node-role|grep -w 'node-role.kubernetes.io/master:')" ] && MASTER+=("${filename::-5}") && NODES+=("$filename [master]") || true
+done
+
+for filename in *.yaml; do
+    [ -e "$filename" ] || continue
+    [ ! -z "$(cat $filename |grep node-role|grep -w 'node-role.kubernetes.io/infra:')" ] && INFRA+=("${filename::-5}")  && NODES+=("$filename [infra]") || true
+done
+
+for filename in *.yaml; do
+    [ -e "$filename" ] || continue
+    [ ! -z "$(cat $filename |grep node-role|grep -w 'node-role.kubernetes.io/worker:')" ] && WORKER+=("${filename::-5}")  && NODES+=("$filename [worker]") || true
+done
+
+echo -e ""
+echo -e "${GREEN}NODES --------------------${NONE}"
+echo -e ""
+echo -e "${#MASTER[@]} masters"
+
+# check if there's no more than supported number of masters (which is 3)
+if (( ${#MASTER[@]} > 3 )); then
+    echo -e "    ${RED}[WARNING] only 3 masters are supported, you have ${#MASTER[@]}.${NONE}"
+fi
+
+# check if any master is missing
+if (( ${#MASTER[@]} < 3 )); then
+    echo -e "    [WARNING] you have only ${#MASTER[@]} masters. Investigate SOSreport from missing one!"
+fi
+
+echo -e "${#INFRA[@]} infra nodes"
+
+# check for infra nodes and suggest consideration 
+if (( ${#INFRA[@]} < 1 )); then
+    echo -e "  ${RED}[WARNING]${NONE} no INFRA nodes or not properly tagged with node-role.kubernetes.io/infra=\"\"."
+    echo -e "            Condsider adding infra nodes to offload masters."
+fi
+
+echo -e "${#WORKER[@]} workers"
 
 
+
+# ETCD ---------------------------
+
+
+cd $MUST_PATH
+cd $(echo */)
+
+echo -e ""
+echo -e "${GREEN}ETCD members --------------------${NONE}"
+cd namespaces/openshift-etcd/pods
+for dirs in $(ls |grep -v guard|grep -v installer|grep -v quorum|grep -v pruner); do
+    [ -e "$dirs" ] || continue
+    [ ! -z "$(ls |grep -v guard|grep -v installer|grep -v quorum|grep -v pruner)" ] && ETCD+=("${dirs}") || true
+    #echo -e "adding $dirs"
+done
+# check if there's no more than supported number of masters (which is 3)
+if (( ${#ETCD[@]} > 3 )); then
+    echo -e "    [WARNING] only 3 etcd members are supported, you have ${#ETCD[@]}."
+fi
+
+# check if any master is missing
+if (( ${#ETCD[@]} < 3 )); then
+    echo -e "    [WARNING] you have only ${#ETCD[@]} etcd members. Investigate logs from missing one!"
+fi
+
+echo -e "${#ETCD[@]} etcd members"
+for member in "${ETCD[@]}"; do
+  echo -e "\n${GREEN}[$member]${NONE}\n"
+  # echo -e ""
+  OVERLOAD=$(cat $member/etcd/etcd/logs/current.log|grep 'overload'|wc -l)
+  OVERLOADN=$(cat $member/etcd/etcd/logs/current.log|grep 'overload'|grep network|wc -l)
+  OVERLOADC=$(cat $member/etcd/etcd/logs/current.log|grep 'overload'|grep disk|wc -l)
+  LAST=$(cat $member/etcd/etcd/logs/current.log|grep 'overload'|tail -1 |cut -d ':' -f1|cut -c 1-10)
+  LOGEND=$(cat $member/etcd/etcd/logs/current.log|tail -1 |cut -d ':' -f1|cut -c 1-10)
+  CLOCK=$(cat $member/etcd/etcd/logs/current.log|grep 'clock difference'|wc -l)
+  LASTNTP=$(cat $member/etcd/etcd/logs/current.log|grep 'clock difference'|tail -1)
+  LONGDRIFT=$(cat $member/etcd/etcd/logs/current.log|grep 'clock-drift'|wc -l)
+  LASTLONGDRIFT=$(cat $member/etcd/etcd/logs/current.log|grep 'clock-drift'|tail -1)
+  TOOK=$(cat $member/etcd/etcd/logs/current.log|grep 'apply request took too long'|wc -l)
+
+  # overloaded
+  if [[ "$OVERLOAD" -eq 0 ]];
+  then
+     echo -e "no overloaded message - ${GREEN}OK!${NONE}"
+  else
+    echo -e "${RED}[WARNING]${NONE} Found $OVERLOAD overloaded messages while there should be zero of them."
+    echo -e ""
+    echo -e "$OVERLOADN x OVERLOADED NETWORK in $member  (high network or remote storage latency)"
+    echo -e "$OVERLOADC x OVERLOADED DISK/CPU in $member  (slow storage or lack of CPU on masters)"
+    echo -e ""
+    echo -e "Last seen on $LAST"
+    echo -e "Log ends on $LOGEND"
+  fi
+  echo -e ""
+  
+  # took too long
+  if [ "$TOOK" != "0" ]; then
+    echo -e "${RED}[WARNING]${NONE} we found $TOOK 'apply request took too long' messages. (You should be concerned only with several thousands of messages)"
+    echo -e "$SUMMARY"
+    TK=$(($TK+$TOOK))
+    echo -e ""
+  else
+    echo -e "no 'apply request took too long' messages"
+  fi
+
+
+  # compaction
+
+  echo -e "[ETCD compaction]\n"
+  echo -e "To avoid running out of space for writes to the keyspace, the etcd keyspace history must be compacted. Storage space itself may be reclaimed by defragmenting etcd members."
+  echo -e "Compaction should be below 200ms on small cluster, below 500ms on medium cluster and below 800ms on large cluster."
+  echo -e "IMPORTANT: if compaction vary too much (and for example jumps from 100 to 600) it could mean masters are using shared storage."
+  echo -e ""
+  cat $member/etcd/etcd/logs/current.log|grep compaction| tail -8 > $OUTPUT_PATH/$member-compat.data
+    
+  cat $OUTPUT_PATH/$member-compat.data| while read line 
+  do
+    CHECK=$(echo $line|tail -8|cut -d ':' -f12| rev | cut -c9- | rev|cut -c2- |grep -E '[0-9]')
+    [[ ! -z "$(echo $CHECK |grep -E '[0-9]s')" ]] && echo "$CHECK <---- TOO HIGH!" || echo $CHECK
+  done
+  echo -e ""
+
+  # ntp
+  if [ "$CLOCK" != "0" ]; then
+    echo -e "${RED}[WARNING]${NONE} we found $CLOCK ntp clock difference messages in $1"
+    NTP=$(($NTP+$CLOCK))
+    echo -e "Last occurrence:"
+    echo -e "$LASTNTP"| cut -d " " -f1
+    echo -e "Log ends at "
+    echo -e "$LOGENDNTP"| cut -d " " -f1
+    echo -e ""
+    echo -e "Long drift: $LONGDRIFT"
+    echo -e "Last long drift:"
+    echo -e $LASTLONGDRIFT
+  else
+    echo -e "no NTP related warnings found - ${GREEN}OK!${NONE}"
+  fi
+done
+
+
+echo -e ""
+
+
+OVRL=0
+NTP=0
+HR=0
+TK=0
+LED=0
+
+
+
+
+# etcd_took_too_long() {
+#     TOOKS_MS=()
+#     MS=$(cat $1/etcd/etcd/logs/current.log|grep 'apply request took too long'|tail -1)
+#     echo $MS
+#     TOOK=$(cat $1/etcd/etcd/logs/current.log|grep 'apply request took too long'|wc -l)
+#     SUMMARY=$(cat $1/etcd/etcd/logs/current.log |awk -v min=999 '/apply request took too long/ {t++} /context deadline exceeded/ {b++} /finished scheduled compaction/ {gsub("\"",""); sub("ms}",""); split($0,a,":"); if (a[12]<min) min=a[12]; if (a[12]>max) max=a[12]; avg+=a[12]; c++} END{printf "took too long: %d\ndeadline exceeded: %d\n",t,b; printf "compaction times:\n  min: %d\n  max: %d\n  avg:%d\n",min,max,avg/c}'
+# )
+#     # if [ "$PLOT" = true ]; then
+#     #   for lines in $(cat $1/etcd/etcd/logs/current.log||grep "apply request took too long"|grep -ohE "took\":\"[0-9]+(.[0-9]+)ms"|cut -c8-);
+#     #   do
+#     #     TOOKS_MS+=("$lines");
+#     #     if [ "$lines" != "}" ]; then
+#     #       echo $lines >> $REPORT_FOLDER/$1-long.data
+#     #     fi
+#     #   done
+#     # fi
+#     # if [ "$PLOT" = true ]; then
+#     #   gnuplot_render $1 "${#TOOKS_MS[@]}" "took too long messages" "Sample number" "Took (ms)" "tooktoolong_graph" "$REPORT_FOLDER/$1-long.data"
+#     # fi
+#     if [ "$TOOK" != "0" ]; then
+#       echo -e "${RED}[WARNING]${NONE} we found $TOOK 'apply request took too long' messages in $1"
+#       echo -e "$SUMMARY"
+#       TK=$(($TK+$TOOK))
+#       echo -e ""
+#     fi
+# }
 
 
 
@@ -112,157 +292,6 @@ echo -e "There are $PV_NUMBER PVs in cluster"
 
 # help_etcd_objects
 
-
-# LIST NODES
-cd ../nodes
-for filename in *.yaml; do
-    [ -e "$filename" ] || continue
-    [ ! -z "$(cat $filename |grep node-role|grep -w 'node-role.kubernetes.io/master:')" ] && MASTER+=("${filename::-5}") && NODES+=("$filename [master]") || true
-done
-
-for filename in *.yaml; do
-    [ -e "$filename" ] || continue
-    [ ! -z "$(cat $filename |grep node-role|grep -w 'node-role.kubernetes.io/infra:')" ] && INFRA+=("${filename::-5}")  && NODES+=("$filename [infra]") || true
-done
-
-for filename in *.yaml; do
-    [ -e "$filename" ] || continue
-    [ ! -z "$(cat $filename |grep node-role|grep -w 'node-role.kubernetes.io/worker:')" ] && WORKER+=("${filename::-5}")  && NODES+=("$filename [worker]") || true
-done
-
-echo -e ""
-echo -e "${GREEN}NODES:${NONE}"
-echo -e ""
-echo -e "${#MASTER[@]} masters"
-
-# check if there's no more than supported number of masters (which is 3)
-if (( ${#MASTER[@]} > 3 )); then
-    echo -e "    ${RED}[WARNING] only 3 masters are supported, you have ${#MASTER[@]}.${NONE}"
-fi
-
-# check if any master is missing
-if (( ${#MASTER[@]} < 3 )); then
-    echo -e "    [WARNING] you have only ${#MASTER[@]}. Investigate SOSreport from missing one!"
-fi
-
-echo -e "${#INFRA[@]} infra nodes"
-
-# check for infra nodes and suggest consideration 
-if (( ${#INFRA[@]} < 1 )); then
-    echo -e "    [WARNING] no INFRA nodes. Condsider adding infra to offload masters."
-fi
-
-echo -e "${#WORKER[@]} workers"
-
-
-
-# for i in ${NODES[@]}; do echo $i; done
-
-
-cd $MUST_PATH
-cd $(echo */)
-
-echo -e ""
-echo -e "[ETCD]"
-cd namespaces/openshift-etcd/pods
-for dirs in $(ls |grep -v guard|grep -v installer|grep -v quorum|grep -v pruner); do
-    [ -e "$dirs" ] || continue
-    [ ! -z "$(ls |grep -v guard|grep -v installer|grep -v quorum|grep -v pruner)" ] && ETCD+=("${dirs}") || true
-    #echo -e "adding $dirs"
-done
-# check if there's no more than supported number of masters (which is 3)
-if (( ${#ETCD[@]} > 3 )); then
-    echo -e "    [WARNING] only 3 etcd members are supported, you have ${#ETCD[@]}."
-fi
-
-# check if any master is missing
-if (( ${#ETCD[@]} < 3 )); then
-    echo -e "    [WARNING] you have only ${#ETCD[@]} etcd members. Investigate logs from missing one!"
-fi
-
-echo -e "${#ETCD[@]} etcd members"
-for member in "${ETCD[@]}"; do
-  echo -e "\n[$member]\n"
-  echo -e ""
-  OVERLOAD=$(cat $member/etcd/etcd/logs/current.log|grep 'overload'|wc -l)
-  OVERLOADN=$(cat $member/etcd/etcd/logs/current.log|grep 'overload'|grep network|wc -l)
-  OVERLOADC=$(cat $member/etcd/etcd/logs/current.log|grep 'overload'|grep disk|wc -l)
-  LAST=$(cat $member/etcd/etcd/logs/current.log|grep 'overload'|tail -1 |cut -d ':' -f1|cut -c 1-10)
-  LOGEND=$(cat $member/etcd/etcd/logs/current.log|tail -1 |cut -d ':' -f1|cut -c 1-10)
-  if [[ "$OVERLOAD" -eq 0 ]];
-  then
-     echo -e "no overloaded message - ${GREEN}OK!${NONE}"
-  else
-    echo -e "${RED}[WARNING]${NONE} Found $OVERLOAD overloaded messages while there should be zero of them."
-    echo -e ""
-    echo -e "$OVERLOADN x OVERLOADED NETWORK in $member  (high network or remote storage latency)"
-    echo -e "$OVERLOADC x OVERLOADED DISK/CPU in $member  (slow storage or lack of CPU on masters)"
-    echo -e ""
-    echo -e "Last seen on $LAST"
-    echo -e "Log ends on $LOGEND"
-  fi
-  echo -e ""
-  TOOK=$(cat $member/etcd/etcd/logs/current.log|grep 'apply request took too long'|wc -l)
-  if [ "$TOOK" != "0" ]; then
-    echo -e "${RED}[WARNING]${NONE} we found $TOOK 'apply request took too long' messages. (You should be concerned only with several thousands of messages)"
-    echo -e "$SUMMARY"
-    TK=$(($TK+$TOOK))
-    echo -e ""
-  else
-    echo -e "no 'apply request took too long' messages"
-  fi
-
-
-  echo -e ""
-  cat $member/etcd/etcd/logs/current.log|grep compaction| tail -68 > $OUTPUT_PATH/$member-compat.data
-    
-  cat $OUTPUT_PATH/$member-compat.data| while read line 
-  do
-    CHECK=$(echo $line|tail -8|cut -d ':' -f12| rev | cut -c9- | rev|cut -c2- |grep -E '[0-9]')
-    [[ ! -z "$(echo $CHECK |grep -E '[0-9]s')" ]] && echo "$CHECK <---- TOO HIGH!" || echo $CHECK
-  done
-  echo -e ""
-done
-
-
-echo -e ""
-
-
-OVRL=0
-NTP=0
-HR=0
-TK=0
-LED=0
-
-
-
-
-# etcd_took_too_long() {
-#     TOOKS_MS=()
-#     MS=$(cat $1/etcd/etcd/logs/current.log|grep 'apply request took too long'|tail -1)
-#     echo $MS
-#     TOOK=$(cat $1/etcd/etcd/logs/current.log|grep 'apply request took too long'|wc -l)
-#     SUMMARY=$(cat $1/etcd/etcd/logs/current.log |awk -v min=999 '/apply request took too long/ {t++} /context deadline exceeded/ {b++} /finished scheduled compaction/ {gsub("\"",""); sub("ms}",""); split($0,a,":"); if (a[12]<min) min=a[12]; if (a[12]>max) max=a[12]; avg+=a[12]; c++} END{printf "took too long: %d\ndeadline exceeded: %d\n",t,b; printf "compaction times:\n  min: %d\n  max: %d\n  avg:%d\n",min,max,avg/c}'
-# )
-#     # if [ "$PLOT" = true ]; then
-#     #   for lines in $(cat $1/etcd/etcd/logs/current.log||grep "apply request took too long"|grep -ohE "took\":\"[0-9]+(.[0-9]+)ms"|cut -c8-);
-#     #   do
-#     #     TOOKS_MS+=("$lines");
-#     #     if [ "$lines" != "}" ]; then
-#     #       echo $lines >> $REPORT_FOLDER/$1-long.data
-#     #     fi
-#     #   done
-#     # fi
-#     # if [ "$PLOT" = true ]; then
-#     #   gnuplot_render $1 "${#TOOKS_MS[@]}" "took too long messages" "Sample number" "Took (ms)" "tooktoolong_graph" "$REPORT_FOLDER/$1-long.data"
-#     # fi
-#     if [ "$TOOK" != "0" ]; then
-#       echo -e "${RED}[WARNING]${NONE} we found $TOOK 'apply request took too long' messages in $1"
-#       echo -e "$SUMMARY"
-#       TK=$(($TK+$TOOK))
-#       echo -e ""
-#     fi
-# }
 
 etcd_ntp() {
     CLOCK=$(cat $1/etcd/etcd/logs/current.log|grep 'clock difference'|wc -l)
@@ -522,7 +551,7 @@ cat default.yaml | grep serviceNetwork
 
 echo -e ""
 echo -e "ADDITIONAL HELP:"
-help_etcd_troubleshoot
-help_etcd_metrics
-help_etcd_networking
-help_etcd_objects
+# help_etcd_troubleshoot
+# help_etcd_metrics
+# help_etcd_networking
+# help_etcd_objects
