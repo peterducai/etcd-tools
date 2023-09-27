@@ -110,6 +110,7 @@ cd $(echo */)
 
 echo -e ""
 echo -e "${GREEN}ETCD members --------------------${NONE}"
+echo -e ""
 cd namespaces/openshift-etcd/pods
 for dirs in $(ls |grep -v guard|grep -v installer|grep -v quorum|grep -v pruner); do
     [ -e "$dirs" ] || continue
@@ -126,7 +127,7 @@ if (( ${#ETCD[@]} < 3 )); then
     echo -e "    [WARNING] you have only ${#ETCD[@]} etcd members. Investigate logs from missing one!"
 fi
 
-echo -e "${#ETCD[@]} etcd members"
+# echo -e "${#ETCD[@]} etcd members"
 for member in "${ETCD[@]}"; do
   echo -e "\n${GREEN}[$member]${NONE}\n"
   # echo -e ""
@@ -140,6 +141,9 @@ for member in "${ETCD[@]}"; do
   LONGDRIFT=$(cat $member/etcd/etcd/logs/current.log|grep 'clock-drift'|wc -l)
   LASTLONGDRIFT=$(cat $member/etcd/etcd/logs/current.log|grep 'clock-drift'|tail -1)
   TOOK=$(cat $member/etcd/etcd/logs/current.log|grep 'apply request took too long'|wc -l)
+  HEART=$(cat $member/etcd/etcd/logs/current.log|grep 'failed to send out heartbeat on time'|wc -l)
+  SPACE=$(cat $member/etcd/etcd/logs/current.log|grep 'database space exceeded'|wc -l)
+  LEADER=$(cat $member/etcd/etcd/logs/current.log|grep 'leader changed'|wc -l)
 
   # overloaded
   if [[ "$OVERLOAD" -eq 0 ]];
@@ -175,7 +179,7 @@ for member in "${ETCD[@]}"; do
   echo -e "IMPORTANT: if compaction vary too much (and for example jumps from 100 to 600) it could mean masters are using shared storage."
   echo -e ""
   cat $member/etcd/etcd/logs/current.log|grep compaction| tail -8 > $OUTPUT_PATH/$member-compat.data
-    
+  echo -e "last compaction: "
   cat $OUTPUT_PATH/$member-compat.data| while read line 
   do
     CHECK=$(echo $line|tail -8|cut -d ':' -f12| rev | cut -c9- | rev|cut -c2- |grep -E '[0-9]')
@@ -197,6 +201,33 @@ for member in "${ETCD[@]}"; do
     echo -e $LASTLONGDRIFT
   else
     echo -e "no NTP related warnings found - ${GREEN}OK!${NONE}"
+  fi
+
+  # heartbeat
+  echo -e ""
+  if [ "$HEART" != "0" ]; then
+    echo -e "${RED}[WARNING]${NONE} we found $HEART failed to send out heartbeat on time messages"
+    HR=$(($HR+$HEART))
+  else
+    echo -e "no 'failed to send out heartbeat on time' messages found - ${GREEN}OK!${NONE}"
+  fi
+
+  # space
+  echo -e ""
+  if [ "$SPACE" != "0" ]; then
+    echo -e "${RED}[WARNING]${NONE} we found $SPACE 'database space exceeded'"
+    SP=$(($SP+$SPACE))
+  else
+    echo -e "no 'database space exceeded' messages found - ${GREEN}OK!${NONE}"
+  fi
+
+  # leader changes
+  echo -e ""
+  if [ "$LEADER" != "0" ]; then
+    echo -e "${RED}[WARNING]${NONE} we found $LEADER 'leader changed'"
+    LED=$(($LED+$LEADER))
+  else
+    echo -e "no 'leader changed' messages found - ${GREEN}OK!${NONE}"
   fi
 done
 
@@ -293,25 +324,25 @@ LED=0
 # help_etcd_objects
 
 
-etcd_ntp() {
-    CLOCK=$(cat $1/etcd/etcd/logs/current.log|grep 'clock difference'|wc -l)
-    LASTNTP=$(cat $1/etcd/etcd/logs/current.log|grep 'clock difference'|tail -1)
-    LONGDRIFT=$(cat $1/etcd/etcd/logs/current.log|grep 'clock-drift'|wc -l)
-    LASTLONGDRIFT=$(cat $1/etcd/etcd/logs/current.log|grep 'clock-drift'|tail -1)
-    LOGENDNTP=$(cat $1/etcd/etcd/logs/current.log|tail -1)
-    if [ "$CLOCK" != "0" ]; then
-      echo -e "${RED}[WARNING]${NONE} we found $CLOCK ntp clock difference messages in $1"
-      NTP=$(($NTP+$CLOCK))
-      echo -e "Last occurrence:"
-      echo -e "$LASTNTP"| cut -d " " -f1
-      echo -e "Log ends at "
-      echo -e "$LOGENDNTP"| cut -d " " -f1
-      echo -e ""
-      echo -e "Long drift: $LONGDRIFT"
-      echo -e "Last long drift:"
-      echo -e $LASTLONGDRIFT
-    fi
-}
+# etcd_ntp() {
+#     CLOCK=$(cat $1/etcd/etcd/logs/current.log|grep 'clock difference'|wc -l)
+#     LASTNTP=$(cat $1/etcd/etcd/logs/current.log|grep 'clock difference'|tail -1)
+#     LONGDRIFT=$(cat $1/etcd/etcd/logs/current.log|grep 'clock-drift'|wc -l)
+#     LASTLONGDRIFT=$(cat $1/etcd/etcd/logs/current.log|grep 'clock-drift'|tail -1)
+#     LOGENDNTP=$(cat $1/etcd/etcd/logs/current.log|tail -1)
+#     if [ "$CLOCK" != "0" ]; then
+#       echo -e "${RED}[WARNING]${NONE} we found $CLOCK ntp clock difference messages in $1"
+#       NTP=$(($NTP+$CLOCK))
+#       echo -e "Last occurrence:"
+#       echo -e "$LASTNTP"| cut -d " " -f1
+#       echo -e "Log ends at "
+#       echo -e "$LOGENDNTP"| cut -d " " -f1
+#       echo -e ""
+#       echo -e "Long drift: $LONGDRIFT"
+#       echo -e "Last long drift:"
+#       echo -e $LASTLONGDRIFT
+#     fi
+# }
 
 etcd_heart() {
     HEART=$(cat $1/etcd/etcd/logs/current.log|grep 'failed to send out heartbeat on time'|wc -l)
@@ -331,10 +362,10 @@ etcd_space() {
 
 etcd_leader() {
   LEADER=$(cat $member/etcd/etcd/logs/current.log|grep 'leader changed'|wc -l)
-      if [ "$LEADER" != "0" ]; then
-      echo -e "${RED}[WARNING]${NONE} we found $LEADER 'leader changed' in $1"
-      LED=$(($LED+$LEADER))
-    fi
+  if [ "$LEADER" != "0" ]; then
+    echo -e "${RED}[WARNING]${NONE} we found $LEADER 'leader changed' in $1"
+    LED=$(($LED+$LEADER))
+  fi
 }
 
 
