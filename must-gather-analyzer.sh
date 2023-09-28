@@ -76,7 +76,7 @@ for filename in *.yaml; do
 done
 
 echo -e ""
-echo -e "${GREEN}NODES --------------------${NONE}"
+echo -e "${GREEN}- NODES --------------------${NONE}"
 echo -e ""
 echo -e "${#MASTER[@]} masters"
 
@@ -109,7 +109,7 @@ cd $MUST_PATH
 cd $(echo */)
 
 echo -e ""
-echo -e "${GREEN}ETCD members --------------------${NONE}"
+echo -e "${GREEN}- ETCD members --------------------${NONE}"
 echo -e ""
 cd namespaces/openshift-etcd/pods
 for dirs in $(ls |grep -v guard|grep -v installer|grep -v quorum|grep -v pruner); do
@@ -155,7 +155,11 @@ for member in "${ETCD[@]}"; do
     echo -e "$OVERLOADN x OVERLOADED NETWORK in $member  (high network or remote storage latency)"
     echo -e "$OVERLOADC x OVERLOADED DISK/CPU in $member  (slow storage or lack of CPU on masters)"
     echo -e ""
-    echo -e "Last seen on $LAST"
+    if [ "$LAST" = "$LOGEND" ]; then
+      echo -e "Warnings last seen on $LAST. ${RED}TODAY!${NONE}"
+    else
+      echo -e "Warnings last seen on $LAST"
+    fi
     echo -e "Log ends on $LOGEND"
   fi
   echo -e ""
@@ -176,7 +180,7 @@ for member in "${ETCD[@]}"; do
   echo -e "[ETCD compaction]\n"
   echo -e "To avoid running out of space for writes to the keyspace, the etcd keyspace history must be compacted. Storage space itself may be reclaimed by defragmenting etcd members."
   echo -e "Compaction should be below 200ms on small cluster, below 500ms on medium cluster and below 800ms on large cluster."
-  echo -e "IMPORTANT: if compaction vary too much (and for example jumps from 100 to 600) it could mean masters are using shared storage."
+  echo -e "IMPORTANT: if compaction vary too much (and for example jumps from 100 to 600) it could mean masters are using shared storage or network storage with bad latency."
   echo -e ""
   cat $member/etcd/etcd/logs/current.log|grep compaction| tail -8 > $OUTPUT_PATH/$member-compat.data
   echo -e "last compaction: "
@@ -206,7 +210,7 @@ for member in "${ETCD[@]}"; do
   # heartbeat
   echo -e ""
   if [ "$HEART" != "0" ]; then
-    echo -e "${RED}[WARNING]${NONE} we found $HEART failed to send out heartbeat on time messages"
+    echo -e "${RED}[WARNING]${NONE} we found $HEART failed to send out heartbeat on time messages. Usually this issue is caused by a slow disk."
     HR=$(($HR+$HEART))
   else
     echo -e "no 'failed to send out heartbeat on time' messages found - ${GREEN}OK!${NONE}"
