@@ -3,7 +3,7 @@
 MUST_PATH=$1
 # PLOT=$2
 STAMP=$(date +%Y-%m-%d_%H-%M-%S)
-REPORT_FOLDER="$HOME/ETCD-SUMMARY_$STAMP"
+#REPORT_FOLDER="$HOME/ETCD-SUMMARY_$STAMP"
 ORIG_PATH=$(pwd)
 OUTPUT_PATH=$ORIG_PATH/DATA
 
@@ -13,8 +13,8 @@ INFRA=()
 WORKER=()
 ETCD=()
 
-mkdir -p $REPORT_FOLDER
-echo "created $REPORT_FOLDER"
+#mkdir -p $REPORT_FOLDER
+#echo "created $REPORT_FOLDER"
 echo -e ""
 
 # TERMINAL COLORS -----------------------------------------------------------------
@@ -46,6 +46,17 @@ if [ -z "$OCP_VERSION" ]; then
 else
   echo -e "Cluster version is $OCP_VERSION"
 fi
+
+#supported version check
+if [[ "$OCP_VERSION" == *"4.10"* || "$OCP_VERSION" == *"4.9"* ]];
+  then
+     echo -e "${RED}[WARNING] UNSUPPORTED OLD VERSION!!! ${NONE}"
+  else
+    echo -e "   ${RED}[WARNING]${NONE} Found $OVERLOAD overloaded messages while there should be zero of them."
+  fi
+  echo -e ""
+
+
 echo -e ""
 
 
@@ -102,6 +113,83 @@ echo -e "${#WORKER[@]} workers"
 
 
 
+echo -e ""
+echo -e "${GREEN}- NETWORKING --------------${NONE}"
+echo -e ""
+cd ../../../cluster-scoped-resources/network.openshift.io/clusternetworks/
+cat default.yaml |grep CIDR
+cat default.yaml |grep plugin
+cat default.yaml | grep serviceNetwork
+
+
+cd $MUST_PATH
+cd $(echo */)
+cd namespaces/openshift-ingress/pods
+for router in $(ls); do
+  echo -e "" > $OUTPUT_PATH/$router.log
+  WATCH=$(cat $router/router/router/logs/current.log |grep 'Unexpected watch close'|wc -l)
+  RERR=$(cat $router/router/router/logs/current.log |grep 'error on the server'|wc -l)
+  echo -e ""
+  echo "$router:"
+  if [[ "$WATCH" -eq 0 ]];
+  then
+    echo -e "   no 'Unexpected watch close' message - ${GREEN}OK!${NONE}"
+  else
+    echo -e "   ${RED}[WARNING]${NONE} we found $WATCH 'Unexpected watch close' messages."
+  fi
+  if [[ "$RERR" -eq 0 ]];
+  then
+    echo -e "   no 'error on the server' message - ${GREEN}OK!${NONE}"
+  else
+    echo -e "   ${RED}[WARNING]${NONE} we found $RERR 'error on the server' messages."
+  fi
+done
+
+echo -e ""
+echo -e "TIP: Additionaly check sosreports for dropped packets and RX/TX errors."
+echo -e ""
+echo -e ""
+
+# omc get clusterversion
+# omc get co | grep -v -e "True.*False.*False"
+# omc get nodes | grep -v -e " Ready "
+# omc get mcp | grep -v -e "True.*False.*False"
+# omc get pods -A  -o wide | grep -v -e "Running" -e "Completed"
+# omc get machinehealthcheck -n openshift-machine-api
+# omc get csv -A | grep -v -e Succeeded
+# omc get events -A | grep -v -e " Normal "
+# for i in $(omc -n openshift-etcd get pods -l app=etcd -o name); do echo "-- $i"; omc -n openshift-etcd logs $i -c etcd 2>&1 | awk -v min=999 '/took too long/ {t++} /context deadline exceeded/ {b++} /finished scheduled compaction/ {gsub("\"",""); sub("ms}",""); split($0,a,":"); if (a[12]<min) min=a[12]; if (a[12]>max) max=a[12]; avg+=a[12]; c++} END{printf "took too long: %d\ndeadline exceeded: %d\n",t,b; printf "compaction times:\n  min: %d\n  max: %d\n  avg:%d\n",min,max,avg/c}'; done
+
+
+# router_check() {  
+#   echo -e ""
+#   echo -e "[ROUTER openshift-ingress check]"
+#   echo -e ""
+#   [ -d "$ORIG_PATH/namespaces/openshift-ingress/pods" ] && echo "found directory" || return
+#   i=0
+#   cd $ORIG_PATH/namespaces/openshift-ingress/pods
+#   for router in $(ls); do
+#     echo "processing $router"
+#     echo -e "" > $OUTPUT_PATH/$router.log
+#     cat $router/router/router/logs/current.log |grep 'Unexpected watch close'|cut -d ' ' -f1| \
+#       xargs -I {} echo -e "{} Unexpected watch close     [$router] !!!" | while read -r line; do echo -e "$line" >> $OUTPUT_PATH/$router.log; done
+#     cat $router/router/router/logs/current.log |grep 'error on the server'|cut -d ' ' -f1| \
+#       xargs -I {} echo -e "{} error on the server  [$router]" | while read -r line; do echo -e "$line" >> $OUTPUT_PATH/$router.log; done
+#     # cat $router/router/router/logs/current.log |grep 'process'|cut -d ' ' -f1| \
+#     #   xargs -I {} echo -e "{} LEADER changed [$router] !" | while read -r line; do echo -e "$line" >> $OUTPUT_PATH/$router.log; done
+#     # cat $router/router/router/logs/current.log |grep 'clock'|cut -d ' ' -f1| \
+#     #   xargs -I {} echo -e "{} NTP clock difference [$router] !!" | while read -r line; do echo -e "$line" >> $OUTPUT_PATH/$router.log; done
+#     # cat $router/router/router/logs/current.log |grep 'buffer'|cut -d ' ' -f1| \
+#     #   xargs -I {} echo -e "{} BUFF [$router] !!" | while read -r line; do echo -e "$line" >> $OUTPUT_PATH/$router.log; done
+#     #increment color
+#     i=$((${i}+1))
+#   done
+#   i=0
+#   cat $OUTPUT_PATH/router*.log > $OUTPUT_PATH/output_router_logs.log
+#   sort -t:  -k2 -k3 $OUTPUT_PATH/output_router_logs.log > $OUTPUT_PATH/sorted.tmp
+#   cat $OUTPUT_PATH/sorted.tmp > $OUTPUT_PATH/output_router_logs.log
+# }
+
 # ETCD ---------------------------
 
 
@@ -129,7 +217,7 @@ fi
 
 # echo -e "${#ETCD[@]} etcd members"
 for member in "${ETCD[@]}"; do
-  echo -e "\n${GREEN}[$member]${NONE}\n"
+  echo -e "\n${GREEN}-[$member] ---${NONE}\n"
   # echo -e ""
   OVERLOAD=$(cat $member/etcd/etcd/logs/current.log|grep 'overload'|wc -l)
   OVERLOADN=$(cat $member/etcd/etcd/logs/current.log|grep 'overload'|grep network|wc -l)
@@ -148,46 +236,46 @@ for member in "${ETCD[@]}"; do
   # overloaded
   if [[ "$OVERLOAD" -eq 0 ]];
   then
-     echo -e "no overloaded message - ${GREEN}OK!${NONE}"
+     echo -e "   no overloaded message - ${GREEN}OK!${NONE}"
   else
-    echo -e "${RED}[WARNING]${NONE} Found $OVERLOAD overloaded messages while there should be zero of them."
+    echo -e "   ${RED}[WARNING]${NONE} Found $OVERLOAD overloaded messages while there should be zero of them."
     echo -e ""
-    echo -e "$OVERLOADN x OVERLOADED NETWORK in $member  (high network or remote storage latency)"
-    echo -e "$OVERLOADC x OVERLOADED DISK/CPU in $member  (slow storage or lack of CPU on masters)"
+    echo -e "   $OVERLOADN x OVERLOADED NETWORK in $member  (high network or remote storage latency)"
+    echo -e "   $OVERLOADC x OVERLOADED DISK/CPU in $member  (slow storage or lack of CPU on masters)"
     echo -e ""
     if [ "$LAST" = "$LOGEND" ]; then
-      echo -e "Warnings last seen on $LAST. ${RED}TODAY!${NONE}"
+      echo -e "   Warnings last seen on $LAST. ${RED}TODAY!${NONE}"
     else
-      echo -e "Warnings last seen on $LAST"
+      echo -e "   Warnings last seen on $LAST"
     fi
-    echo -e "Log ends on $LOGEND"
+    echo -e "   Log ends on $LOGEND"
   fi
   echo -e ""
   
   # took too long
   if [ "$TOOK" != "0" ]; then
-    echo -e "${RED}[WARNING]${NONE} we found $TOOK 'apply request took too long' messages. (You should be concerned only with several thousands of messages)"
-    echo -e "$SUMMARY"
+    echo -e "   ${RED}[WARNING]${NONE} we found $TOOK 'apply request took too long' messages. (You should be concerned only with several thousands of messages)"
+    echo -e "   $SUMMARY"
     TK=$(($TK+$TOOK))
     echo -e ""
   else
-    echo -e "no 'apply request took too long' messages"
+    echo -e "   no 'apply request took too long' messages"
   fi
 
 
   # compaction
 
-  echo -e "[ETCD compaction]\n"
-  echo -e "To avoid running out of space for writes to the keyspace, the etcd keyspace history must be compacted. Storage space itself may be reclaimed by defragmenting etcd members."
+  echo -e "   [ETCD compaction]\n"
+  echo -e "   To avoid running out of space for writes to the keyspace, the etcd keyspace history must be compacted. Storage space itself may be reclaimed by defragmenting etcd members."
   echo -e "Compaction should be below 200ms on small cluster, below 500ms on medium cluster and below 800ms on large cluster."
   echo -e "IMPORTANT: if compaction vary too much (and for example jumps from 100 to 600) it could mean masters are using shared storage or network storage with bad latency."
   echo -e ""
   cat $member/etcd/etcd/logs/current.log|grep compaction| tail -8 > $OUTPUT_PATH/$member-compat.data
-  echo -e "last compaction: "
+  echo -e "   last compaction:\n"
   cat $OUTPUT_PATH/$member-compat.data| while read line 
   do
     CHECK=$(echo $line|tail -8|cut -d ':' -f12| rev | cut -c9- | rev|cut -c2- |grep -E '[0-9]')
-    [[ ! -z "$(echo $CHECK |grep -E '[0-9]s')" ]] && echo "$CHECK <---- TOO HIGH!" || echo $CHECK
+    [[ ! -z "$(echo $CHECK |grep -E '[0-9]s')" ]] && echo "   $CHECK <---- TOO HIGH!" || echo "   $CHECK"
   done
   echo -e ""
 
@@ -195,43 +283,43 @@ for member in "${ETCD[@]}"; do
   if [ "$CLOCK" != "0" ]; then
     echo -e "${RED}[WARNING]${NONE} we found $CLOCK ntp clock difference messages in $1"
     NTP=$(($NTP+$CLOCK))
-    echo -e "Last occurrence:"
-    echo -e "$LASTNTP"| cut -d " " -f1
-    echo -e "Log ends at "
-    echo -e "$LOGENDNTP"| cut -d " " -f1
+    echo -e "   Last occurrence:"
+    echo -e "   $LASTNTP"| cut -d " " -f1
+    echo -e "   Log ends at "
+    echo -e "   $LOGENDNTP"| cut -d " " -f1
     echo -e ""
-    echo -e "Long drift: $LONGDRIFT"
-    echo -e "Last long drift:"
-    echo -e $LASTLONGDRIFT
+    echo -e "   Long drift: $LONGDRIFT"
+    echo -e "   Last long drift:"
+    echo -e "   $LASTLONGDRIFT"
   else
-    echo -e "no NTP related warnings found - ${GREEN}OK!${NONE}"
+    echo -e "   no NTP related warnings found - ${GREEN}OK!${NONE}"
   fi
 
   # heartbeat
   echo -e ""
   if [ "$HEART" != "0" ]; then
-    echo -e "${RED}[WARNING]${NONE} we found $HEART failed to send out heartbeat on time messages. Usually this issue is caused by a slow disk."
+    echo -e "   ${RED}[WARNING]${NONE} we found $HEART failed to send out heartbeat on time messages. Usually this issue is caused by a slow disk."
     HR=$(($HR+$HEART))
   else
-    echo -e "no 'failed to send out heartbeat on time' messages found - ${GREEN}OK!${NONE}"
+    echo -e "   no 'failed to send out heartbeat on time' messages found - ${GREEN}OK!${NONE}"
   fi
 
   # space
   echo -e ""
   if [ "$SPACE" != "0" ]; then
-    echo -e "${RED}[WARNING]${NONE} we found $SPACE 'database space exceeded'"
+    echo -e "   ${RED}[WARNING]${NONE} we found $SPACE 'database space exceeded'"
     SP=$(($SP+$SPACE))
   else
-    echo -e "no 'database space exceeded' messages found - ${GREEN}OK!${NONE}"
+    echo -e "   no 'database space exceeded' messages found - ${GREEN}OK!${NONE}"
   fi
 
   # leader changes
   echo -e ""
   if [ "$LEADER" != "0" ]; then
-    echo -e "${RED}[WARNING]${NONE} we found $LEADER 'leader changed'"
+    echo -e "   ${RED}[WARNING]${NONE} we found $LEADER 'leader changed'"
     LED=$(($LED+$LEADER))
   else
-    echo -e "no 'leader changed' messages found - ${GREEN}OK!${NONE}"
+    echo -e "   no 'leader changed' messages found - ${GREEN}OK!${NONE}"
   fi
 done
 
@@ -578,11 +666,7 @@ audit_logs() {
 
 
 
-echo -e ""
-echo -e "[NETWORKING]"
-cd ../../../cluster-scoped-resources/network.openshift.io/clusternetworks/
-cat default.yaml |grep CIDR
-cat default.yaml | grep serviceNetwork
+
 
 echo -e ""
 echo -e "ADDITIONAL HELP:"
