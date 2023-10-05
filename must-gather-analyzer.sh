@@ -68,7 +68,7 @@ cd cluster-scoped-resources/core/nodes
 NODES_NUMBER=$(ls|wc -l)
 echo -e "There are $NODES_NUMBER nodes in cluster"
 
-[ -d "../persistentvolumes" ] && PV_NUMBER=$(ls|wc -l) && echo -e "There are $PV_NUMBER PVs in cluster" || echo "No PV files found."
+[ -d "../persistentvolumes" ] && PV_NUMBER=$(ls|wc -l) && echo -e "There are $PV_NUMBER PVs in cluster" || echo -e "${RED}No PV files found. MISSING.${NONE}"
 
 cd ../nodes
 for filename in *.yaml; do
@@ -129,6 +129,8 @@ for router in $(ls); do
   echo -e "" > $OUTPUT_PATH/$router.log
   WATCH=$(cat $router/router/router/logs/current.log |grep 'Unexpected watch close'|wc -l)
   RERR=$(cat $router/router/router/logs/current.log |grep 'error on the server'|wc -l)
+  DEAD=$(cat $router/router/router/logs/current.log |grep 'context deadline exceeded'|wc -l)
+  CLTIME=$(cat $router/router/router/logs/current.log |grep 'ClientTimeout'|wc -l)
   echo -e ""
   echo "$router:"
   if [[ "$WATCH" -eq 0 ]];
@@ -142,6 +144,18 @@ for router in $(ls); do
     echo -e "   no 'error on the server' message - ${GREEN}OK!${NONE}"
   else
     echo -e "   ${RED}[WARNING]${NONE} we found $RERR 'error on the server' messages."
+  fi
+    if [[ "$DEAD" -eq 0 ]];
+  then
+    echo -e "   no 'context deadline exceeded' message - ${GREEN}OK!${NONE}"
+  else
+    echo -e "   ${RED}[WARNING]${NONE} we found $DEAD 'context deadline exceeded' messages."
+  fi
+    if [[ "$CLTIME" -eq 0 ]];
+  then
+    echo -e "   no 'ClientTimeout' message - ${GREEN}OK!${NONE}"
+  else
+    echo -e "   ${RED}[WARNING]${NONE} we found $CLTIME 'ClientTimeout' messages."
   fi
 done
 
@@ -267,8 +281,8 @@ for member in "${ETCD[@]}"; do
 
   echo -e "   [ETCD compaction]\n"
   echo -e "   To avoid running out of space for writes to the keyspace, the etcd keyspace history must be compacted. Storage space itself may be reclaimed by defragmenting etcd members."
-  echo -e "Compaction should be below 200ms on small cluster, below 500ms on medium cluster and below 800ms on large cluster."
-  echo -e "IMPORTANT: if compaction vary too much (and for example jumps from 100 to 600) it could mean masters are using shared storage or network storage with bad latency."
+  echo -e "   Compaction should be below 200ms on small cluster, below 500ms on medium cluster and below 800ms on large cluster."
+  echo -e "   IMPORTANT: if compaction vary too much (and for example jumps from 100 to 600) it could mean masters are using shared storage or network storage with bad latency."
   echo -e ""
   cat $member/etcd/etcd/logs/current.log|grep compaction| tail -8 > $OUTPUT_PATH/$member-compat.data
   echo -e "   last compaction:\n"
