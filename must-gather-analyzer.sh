@@ -51,8 +51,8 @@ fi
 if [[ "$OCP_VERSION" == *"4.10"* || "$OCP_VERSION" == *"4.9"* ]];
   then
      echo -e "${RED}[WARNING] UNSUPPORTED OLD VERSION!!! ${NONE}"
-  else
-    echo -e "   ${RED}[WARNING]${NONE} Found $OVERLOAD overloaded messages while there should be zero of them."
+  # else
+  #   echo -e "   ${RED}[WARNING]${NONE} Found $OVERLOAD overloaded messages while there should be zero of them."
   fi
   echo -e ""
 
