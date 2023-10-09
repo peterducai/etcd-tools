@@ -116,6 +116,11 @@ echo -e "${#WORKER[@]} workers"
 echo -e ""
 echo -e "${GREEN}- NETWORKING --------------${NONE}"
 echo -e ""
+
+# Clusternetwork.yaml only exists for openshift-sdn
+# OVN-K doesn't use it
+# Better get it from the 'network'  object at either 'config.openshift.io' or 'operator.openshift.io'  api groups
+
 cd ../../../cluster-scoped-resources/network.openshift.io/clusternetworks/
 cat default.yaml |grep CIDR
 cat default.yaml |grep plugin
@@ -289,7 +294,7 @@ for member in "${ETCD[@]}"; do
   cat $OUTPUT_PATH/$member-compat.data| while read line 
   do
     CHECK=$(echo $line|tail -8|cut -d ':' -f12| rev | cut -c9- | rev|cut -c2- |grep -E '[0-9]')
-    [[ ! -z "$(echo $CHECK |grep -E '[0-9]s')" ]] && echo "   $CHECK <---- TOO HIGH!" || echo "   $CHECK"
+    [[ ! -z "$(echo $CHECK |grep -E '[0-9]s')" ]] && echo -e "${RED}   $CHECK <---- TOO HIGH!${NONE}" || echo "   $CHECK"
   done
   echo -e ""
 
