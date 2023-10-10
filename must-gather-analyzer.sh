@@ -283,7 +283,7 @@ for member in "${ETCD[@]}"; do
     if [ "$LAST" = "$LOGEND" ]; then
       echo -e "   Warnings last seen on $LAST. ${RED}TODAY!${NONE}"
     else
-      echo -e "   Warnings last seen on $LAST"
+      echo -e "   Warnings last seen on $LAST. ${GREEN}NOT TODAY!${NONE}"
     fi
     echo -e "   Log ends on $LOGEND"
     echo -e ""
