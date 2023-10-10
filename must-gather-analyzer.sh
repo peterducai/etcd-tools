@@ -147,7 +147,7 @@ for router in $(ls); do
   WATCH=$(cat $router/router/router/logs/current.log |grep 'Unexpected watch close'|wc -l)
   RERR=$(cat $router/router/router/logs/current.log |grep 'error on the server'|wc -l)
   DEAD=$(cat $router/router/router/logs/current.log |grep 'context deadline exceeded'|wc -l)
-  CLTIME=$(cat $router/router/router/logs/current.log |grep 'ClientTimeout'|wc -l)
+  CLTIME=$(cat $router/router/router/logs/current.log |grep 'timeout'|wc -l)
 
   PRC=$(cat $router/router/router/logs/current.log |grep 'process'|wc -l)
   CLK=$(cat $router/router/router/logs/current.log |grep 'clock'|wc -l)
