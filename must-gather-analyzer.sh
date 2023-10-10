@@ -113,6 +113,12 @@ if (( ${#MASTER[@]} < 3 )); then
     echo -e "    [WARNING] you have only ${#MASTER[@]} masters. Investigate SOSreport from missing one!"
 fi
 
+for filename in *.yaml; do
+    [ -e "$filename" ] || continue
+    [ ! -z "$(cat $filename |grep node-role|grep -w 'node-role.kubernetes.io/master:')" ] && cat $filename |grep cpu|grep -v "f:cpu"|grep -v "m" || true
+done
+echo -e ""
+
 echo -e "${#INFRA[@]} infra nodes"
 
 # check for infra nodes and suggest consideration 
@@ -121,6 +127,12 @@ if (( ${#INFRA[@]} < 1 )); then
     echo -e "            Condsider adding infra nodes to offload masters."
 fi
 
+for filename in *.yaml; do
+    [ -e "$filename" ] || continue
+    [ ! -z "$(cat $filename |grep node-role|grep -w 'node-role.kubernetes.io/infra:')" ] && cat $filename |grep cpu|grep -v "f:cpu"|grep -v "m" || true
+done
+
+echo -e ""
 echo -e "${#WORKER[@]} workers"
 
 
