@@ -68,8 +68,20 @@ cd cluster-scoped-resources/core/nodes
 NODES_NUMBER=$(ls|wc -l)
 echo -e "There are $NODES_NUMBER nodes in cluster"
 
-[ -d "../persistentvolumes" ] && PV_NUMBER=$(ls|wc -l) && echo -e "There are $PV_NUMBER PVs in cluster" || echo -e "${RED}No PV files found. MISSING.${NONE}"
+# STORAGE
 
+cd ../persistentvolumes
+[ -d "../persistentvolumes" ] && PVCS=$(ls) && PV_NUMBER=$(ls|wc -l) && echo -e "There are $PV_NUMBER PVs in cluster" || echo -e "${RED}No PV files found. MISSING.${NONE}"
+
+# echo "" > $OUTPUT_PATH/pvcs
+# for i in $PVCS; do
+#   echo $(cat $i |grep "storageClassName"|grep -v "f:storageClassName") >> $OUTPUT_PATH/pvcs
+# done
+
+# echo -e "Class:"
+# cat $OUTPUT_PATH/pvcs |sort -u|uniq
+
+# NODES
 cd ../nodes
 for filename in *.yaml; do
     [ -e "$filename" ] || continue
@@ -252,6 +264,12 @@ for member in "${ETCD[@]}"; do
   SPACE=$(cat $member/etcd/etcd/logs/current.log|grep 'database space exceeded'|wc -l)
   LEADER=$(cat $member/etcd/etcd/logs/current.log|grep 'leader changed'|wc -l)
 
+  OVRL=0
+  NTP=0
+  HR=0
+  TK=0
+  LED=0
+
   # overloaded
   if [[ "$OVERLOAD" -eq 0 ]];
   then
@@ -268,6 +286,9 @@ for member in "${ETCD[@]}"; do
       echo -e "   Warnings last seen on $LAST"
     fi
     echo -e "   Log ends on $LOGEND"
+    echo -e ""
+    echo -e "   SOLUTION: Review ETCD and CPU metrics as this could be caused by CPU bottleneck or slow disk (or combination of both)."
+    echo -e ""
   fi
   echo -e ""
   
@@ -279,6 +300,7 @@ for member in "${ETCD[@]}"; do
     echo -e ""
   else
     echo -e "   no 'apply request took too long' messages"
+    echo -e ""
   fi
 
 
@@ -310,6 +332,11 @@ for member in "${ETCD[@]}"; do
     echo -e "   Long drift: $LONGDRIFT"
     echo -e "   Last long drift:"
     echo -e "   $LASTLONGDRIFT"
+        echo -e ""
+    echo -e "   SOLUTION: When clocks are out of sync with each other they are causing I/O timeouts and the liveness probe is failing which makes the ETCD pod to restart frequently. Check if Chrony is enabled, running, and in sync with:"
+    echo -e "          - chronyc sources"
+    echo -e "          - chronyc tracking"
+    echo -e ""
   else
     echo -e "   no NTP related warnings found - ${GREEN}OK!${NONE}"
   fi
@@ -328,6 +355,9 @@ for member in "${ETCD[@]}"; do
   if [ "$SPACE" != "0" ]; then
     echo -e "   ${RED}[WARNING]${NONE} we found $SPACE 'database space exceeded'"
     SP=$(($SP+$SPACE))
+    echo -e ""
+    echo -e "SOLUTION: Defragment and clean up ETCD, remove unused secrets or deployments."
+    echo -e ""
   else
     echo -e "   no 'database space exceeded' messages found - ${GREEN}OK!${NONE}"
   fi
@@ -346,11 +376,36 @@ done
 echo -e ""
 
 
-OVRL=0
-NTP=0
-HR=0
-TK=0
-LED=0
+
+
+
+echo -e ""
+echo -e "[API CONSUMERS kube-apiserver on masters]"
+echo -e ""
+cd $MUST_PATH
+cd $(echo */)
+[ -d "audit_logs/kube-apiserver/" ]  && echo -e "Audit logs found. Processing." || echo -e "${RED}No audit logs found. MISSING.${NONE}" && exit 0
+cd audit_logs/kube-apiserver/
+
+AUDIT_LOGS=$(ls *.gz|grep audit)
+node=""
+for i in $AUDIT_LOGS; do
+  #echo -e "[ extracting $i ]"
+  gzip -d $i  
+done;
+AUDIT_LOGS=$(ls *.log)
+for i in $AUDIT_LOGS; do
+  echo -e "[ processing $i ]"
+  if [[ $i == *".log"* ]]; then
+    cat $i |jq '.user.username' -r > $OUTPUT_PATH/$(echo $i|cut -d ' ' -f2)_2sort.log
+    sort $OUTPUT_PATH/$(echo $i|cut -d ' ' -f2)_2sort.log | uniq -c | sort -bgr| head -10
+    echo -e ""
+  else
+    node=$i
+    continue
+  fi
+
+done;
 
 
 
@@ -455,29 +510,7 @@ LED=0
 #     fi
 # }
 
-etcd_heart() {
-    HEART=$(cat $1/etcd/etcd/logs/current.log|grep 'failed to send out heartbeat on time'|wc -l)
-    if [ "$HEART" != "0" ]; then
-      echo -e "${RED}[WARNING]${NONE} we found $HEART failed to send out heartbeat on time messages in $1"
-      HR=$(($HR+$HEART))
-    fi
-}
 
-etcd_space() {
-    SPACE=$(cat $member/etcd/etcd/logs/current.log|grep 'database space exceeded'|wc -l)
-    if [ "$SPACE" != "0" ]; then
-      echo -e "${RED}[WARNING]${NONE} we found $SPACE 'database space exceeded' in $1"
-      SP=$(($SP+$SPACE))
-    fi
-}
-
-etcd_leader() {
-  LEADER=$(cat $member/etcd/etcd/logs/current.log|grep 'leader changed'|wc -l)
-  if [ "$LEADER" != "0" ]; then
-    echo -e "${RED}[WARNING]${NONE} we found $LEADER 'leader changed' in $1"
-    LED=$(($LED+$LEADER))
-  fi
-}
 
 
 
@@ -496,159 +529,10 @@ etcd_leader() {
 # MAIN FUNCS
 
 overload_solution() {
-    echo -e "SOLUTION: Review ETCD and CPU metrics as this could be caused by CPU bottleneck or slow disk."
-    echo -e ""
+    
 }
 
 
-overload_check() {
-    echo -e ""
-    echo -e "[OVERLOADED MESSAGES]"
-    echo -e ""
-    for member in $(ls |grep -v "revision"|grep -v "quorum"|grep -v "guard"); do
-      etcd_overload $member
-    done
-    # echo -e "Found together $OVRL 'server is likely overloaded' messages."
-    # echo -e ""
-    # if [[ $OVRL -ne "0" ]];then
-    #     overload_solution
-    # fi
-}
-
-tooklong_solution() {
-    echo -e ""
-    echo -e "SOLUTION: Even with a slow mechanical disk or a virtualized network disk, applying a request should normally take fewer than 50 milliseconds (and around 5ms for fast SSD/NVMe disk)."
-    echo -e ""
-}
-
-tooklong_check() {
-    echo -e ""
-    echo -e "[TOOK TOO LONG MESSAGES]"
-    echo -e ""
-    for member in $(ls |grep -v "revision"|grep -v "quorum"|grep -v "guard"); do
-      etcd_took_too_long $member
-    done
-    echo -e ""
-    if [[ $TK -eq "0" ]];then
-        echo -e "Found zero 'took too long' messages.  OK"
-    else
-        echo -e "Found together $TK 'took too long' messages."
-    fi
-    if [[ $TK -ne "0" ]];then
-        tooklong_solution
-    fi
-}
-
-
-
-ntp_solution() {
-    echo -e ""
-    echo -e "SOLUTION: When clocks are out of sync with each other they are causing I/O timeouts and the liveness probe is failing which makes the ETCD pod to restart frequently. Check if Chrony is enabled, running, and in sync with:"
-    echo -e "          - chronyc sources"
-    echo -e "          - chronyc tracking"
-    echo -e ""
-}
-
-ntp_check() {
-    echo -e "[NTP MESSAGES]"
-    for member in $(ls |grep -v "revision"|grep -v "quorum"|grep -v "guard"); do
-      etcd_ntp $member
-    done
-    echo -e ""
-    if [[ $NTP -eq "0" ]];then
-        echo -e "Found zero NTP out of sync messages.  OK"
-    else
-        echo -e "Found together $NTP NTP out of sync messages."
-    fi
-    echo -e ""
-    if [[ $NTP -ne "0" ]];then
-        ntp_solution
-    fi
-}
-
-heart_solution() {
-    echo -e ""
-    echo -e "SOLUTION: Usually this issue is caused by a slow disk. The disk could be experiencing contention among ETCD and other applications, or the disk is too simply slow."
-    echo -e ""
-}
-
-heart_check() {
-    # echo -e ""
-    for member in $(ls |grep -v "revision"|grep -v "quorum"|grep -v "guard"); do
-      etcd_heart $member
-    done
-    echo -e ""    
-    if [[ $HEART -eq "0" ]];then
-        echo -e "Found zero 'failed to send out heartbeat on time' messages.  OK"
-    else
-        echo -e "Found together $HR 'failed to send out heartbeat on time' messages."
-    fi
-    echo -e ""
-    if [[ $HEART -ne "0" ]];then
-        heart_solution
-    fi
-}
-
-space_solution() {
-    echo -e ""
-    echo -e "SOLUTION: Defragment and clean up ETCD, remove unused secrets or deployments."
-    echo -e ""
-}
-
-space_check() {
-    echo -e "[SPACE EXCEEDED MESSAGES]"
-    for member in $(ls |grep -v "revision"|grep -v "quorum"|grep -v "guard"); do
-      etcd_space $member
-    done
-    echo -e ""
-    if [[ $SP -eq "0" ]];then
-        echo -e "Found zero 'database space exceeded' messages.  OK"
-    else
-        echo -e "Found together $SP 'database space exceeded' messages."
-    fi
-    echo -e ""
-    if [[ $SPACE -ne "0" ]];then
-        space_solution
-    fi
-}
-
-
-leader_solution() {
-    echo -e ""
-    echo -e "SOLUTION: Defragment and clean up ETCD. Also consider faster storage."
-    echo -e ""
-}
-
-leader_check() {
-    echo -e "[LEADER CHANGED MESSAGES]"
-    for member in $(ls |grep -v "revision"|grep -v "quorum"|grep -v "guard"); do
-      etcd_leader $member
-    done
-    echo -e ""
-    if [[ $LED -eq "0" ]];then
-        echo -e "Found zero 'leader changed' messages.  OK"
-    else
-        echo -e "Found together $LED 'leader changed' messages."
-    fi
-    if [[ $LED -ne "0" ]];then
-        leader_solution
-    fi
-}
-
-# compaction_check() {
-#   echo -e ""
-#   echo -e "[COMPACTION]"
-#   echo -e "should be ideally below 100ms (and below 10ms on fast SSD/NVMe) on small clusters, 300-500 on medium or large and no more than 800-900ms on very large clusters."
-#   echo -e ""
-#   for member in $(ls |grep -v "revision"|grep -v "quorum"|grep -v "guard"); do
-#     etcd_compaction $member
-#   done
-#   echo -e ""
-#   # echo -e "  Found together $LED 'leader changed' messages."
-#   # if [[ $LED -ne "0" ]];then
-#   #     leader_solution
-#   # fi
-# }
 
 
 audit_logs() {
