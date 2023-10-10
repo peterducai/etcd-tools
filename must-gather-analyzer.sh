@@ -148,6 +148,11 @@ for router in $(ls); do
   RERR=$(cat $router/router/router/logs/current.log |grep 'error on the server'|wc -l)
   DEAD=$(cat $router/router/router/logs/current.log |grep 'context deadline exceeded'|wc -l)
   CLTIME=$(cat $router/router/router/logs/current.log |grep 'ClientTimeout'|wc -l)
+
+  PRC=$(cat $router/router/router/logs/current.log |grep 'process'|wc -l)
+  CLK=$(cat $router/router/router/logs/current.log |grep 'clock'|wc -l)
+  BFR=$(cat $router/router/router/logs/current.log |grep 'buffer'|wc -l)
+# cat $router/router/router/logs/current.log |grep 'process'
   echo -e ""
   echo "$router:"
   if [[ "$WATCH" -eq 0 ]];
@@ -168,11 +173,29 @@ for router in $(ls); do
   else
     echo -e "   ${RED}[WARNING]${NONE} we found $DEAD 'context deadline exceeded' messages."
   fi
-    if [[ "$CLTIME" -eq 0 ]];
+  if [[ "$CLTIME" -eq 0 ]];
   then
     echo -e "   no 'ClientTimeout' message - ${GREEN}OK!${NONE}"
   else
     echo -e "   ${RED}[WARNING]${NONE} we found $CLTIME 'ClientTimeout' messages."
+  fi
+  if [[ "$PRC" -eq 0 ]];
+  then
+    echo -e "   no 'process' message - ${GREEN}OK!${NONE}"
+  else
+    echo -e "   ${RED}[WARNING]${NONE} we found $PRC 'Failed to open XYZ for getting process status' messages."
+  fi
+  if [[ "$CLK" -eq 0 ]];
+  then
+    echo -e "   no 'clock' message - ${GREEN}OK!${NONE}"
+  else
+    echo -e "   ${RED}[WARNING]${NONE} we found $CLK 'clock' messages."
+  fi
+  if [[ "$BFR" -eq 0 ]];
+  then
+    echo -e "   no 'buffer' message - ${GREEN}OK!${NONE}"
+  else
+    echo -e "   ${RED}[WARNING]${NONE} we found $BFR 'buffer' messages."
   fi
 done
 
