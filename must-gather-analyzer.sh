@@ -114,9 +114,15 @@ if (( ${#MASTER[@]} < 3 )); then
     echo -e "    [WARNING] you have only ${#MASTER[@]} masters. Investigate SOSreport from missing one!"
 fi
 
-for filename in *.yaml; do
-    [ -e "$filename" ] || continue
-    [ ! -z "$(cat $filename |grep node-role|grep -w 'node-role.kubernetes.io/master:')" ] && cat $filename |grep cpu|grep -v "f:cpu"|grep -v "m" || true
+echo -e ""
+echo -e "Minimum 4 vCPU (additional are strongly recommended)."
+echo -e "Minimum 16 GB RAM (additional memory is strongly recommended, especially if etcd is co-located on masters)."
+echo -e ""
+
+for filename in *.yaml; do 
+  [ -e "$filename" ] || continue
+  [ ! -z "$(cat $filename |grep node-role|grep -w 'node-role.kubernetes.io/master:')" ] && echo -e "- $filename" && cat $filename |grep cpu|grep -v "f:cpu"|grep -v "m" || true
+  [ ! -z "$(cat $filename |grep node-role|grep -w 'node-role.kubernetes.io/master:')" ] && cat $filename |grep memory|grep -v "f:memory"|grep -v 'message' || true
 done
 echo -e ""
 
@@ -129,8 +135,9 @@ if (( ${#INFRA[@]} < 1 )); then
 fi
 
 for filename in *.yaml; do
-    [ -e "$filename" ] || continue
-    [ ! -z "$(cat $filename |grep node-role|grep -w 'node-role.kubernetes.io/infra:')" ] && cat $filename |grep cpu|grep -v "f:cpu"|grep -v "m" || true
+  [ -e "$filename" ] || continue
+  [ ! -z "$(cat $filename |grep node-role|grep -w 'node-role.kubernetes.io/infra:')" ] && cat $filename |grep cpu|grep -v "f:cpu"|grep -v "m" || true
+  [ ! -z "$(cat $filename |grep node-role|grep -w 'node-role.kubernetes.io/infra:')" ] && cat $filename |grep memory|grep -v "f:memory"|grep -v 'message' || true
 done
 
 echo -e ""
@@ -160,6 +167,9 @@ cat networks.yaml|grep 'cidr' |uniq
 # cat default.yaml |grep plugin
 # cat default.yaml | grep serviceNetwork
 
+echo -e ""
+echo -e "${GREEN}- openshift-ingress router pods:${NONE}"
+echo -e ""
 
 cd $MUST_PATH
 cd $(echo */)
@@ -273,7 +283,7 @@ cd $MUST_PATH
 cd $(echo */)
 
 echo -e ""
-echo -e "${GREEN}- ETCD members --------------------${NONE}"
+echo -e "${GREEN}- ETCD --------------------${NONE}"
 echo -e ""
 cd namespaces/openshift-etcd/pods
 for dirs in $(ls |grep -v guard|grep -v installer|grep -v quorum|grep -v pruner); do
