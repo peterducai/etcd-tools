@@ -6,7 +6,7 @@ STAMP=$(date +%Y-%m-%d_%H-%M-%S)
 #REPORT_FOLDER="$HOME/ETCD-SUMMARY_$STAMP"
 ORIG_PATH=$(pwd)
 OUTPUT_PATH=$ORIG_PATH/DATA
-mkdir $OUTPUT_PATH
+mkdir -p $OUTPUT_PATH
 
 NODES=()
 MASTER=()
@@ -146,10 +146,19 @@ echo -e ""
 # OVN-K doesn't use it
 # Better get it from the 'network'  object at either 'config.openshift.io' or 'operator.openshift.io'  api groups
 
-cd ../../../cluster-scoped-resources/network.openshift.io/clusternetworks/
-cat default.yaml |grep CIDR
-cat default.yaml |grep plugin
-cat default.yaml | grep serviceNetwork
+#networkType
+
+cd ../../config.openshift.io
+cat networks.yaml|grep 'networkType' |uniq
+cat networks.yaml|grep 'cidr' |uniq
+
+# [ -d "../persistentvolumes" ] && PVCS=$(ls) && PV_NUMBER=$(ls|wc -l) && echo -e "There are $PV_NUMBER PVs in cluster" || echo -e "${RED}No PV files found. MISSING.${NONE}"
+
+# [ -d "../persistentvolumes" ] && PVCS=$(ls) && PV_NUMBER=$(ls|wc -l) && echo -e "There are $PV_NUMBER PVs in cluster" || echo -e "${RED}No PV files found. MISSING.${NONE}"
+# cd ../../../cluster-scoped-resources/network.openshift.io/clusternetworks/
+# cat default.yaml |grep CIDR
+# cat default.yaml |grep plugin
+# cat default.yaml | grep serviceNetwork
 
 
 cd $MUST_PATH
