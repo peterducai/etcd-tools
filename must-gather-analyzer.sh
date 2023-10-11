@@ -203,7 +203,7 @@ for router in $(ls); do
   fi
   if [[ "$PRC" -eq 0 ]];
   then
-    echo -e "   no 'process' message - ${GREEN}OK!${NONE}"
+    echo -e "   no 'Failed to open XYZ for getting process status' message - ${GREEN}OK!${NONE}"
   else
     echo -e "   ${RED}[WARNING]${NONE} we found $PRC 'Failed to open XYZ for getting process status' messages."
   fi
