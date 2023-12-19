@@ -12,6 +12,7 @@ NODES=()
 MASTER=()
 INFRA=()
 WORKER=()
+OCS=()
 ETCD=()
 
 #mkdir -p $REPORT_FOLDER
@@ -99,6 +100,11 @@ for filename in *.yaml; do
     [ ! -z "$(cat $filename |grep node-role|grep -w 'node-role.kubernetes.io/worker:')" ] && WORKER+=("${filename::-5}")  && NODES+=("$filename [worker]") || true
 done
 
+for filename in *.yaml; do
+    [ -e "$filename" ] || continue
+    [ ! -z "$(cat $filename |grep -w 'cluster.ocs.openshift.io/openshift-storage')" ] && OCS+=("${filename::-5}")  || true
+done
+
 echo -e ""
 echo -e "${GREEN}- NODES --------------------${NONE}"
 echo -e ""
@@ -136,12 +142,30 @@ fi
 
 for filename in *.yaml; do
   [ -e "$filename" ] || continue
-  [ ! -z "$(cat $filename |grep node-role|grep -w 'node-role.kubernetes.io/infra:')" ] && cat $filename |grep cpu|grep -v "f:cpu"|grep -v "m" || true
+  [ ! -z "$(cat $filename |grep node-role|grep -w 'node-role.kubernetes.io/infra:')" ] && echo -e "- $filename" &&cat $filename |grep cpu|grep -v "f:cpu"|grep -v "m" || true
   [ ! -z "$(cat $filename |grep node-role|grep -w 'node-role.kubernetes.io/infra:')" ] && cat $filename |grep memory|grep -v "f:memory"|grep -v 'message' || true
 done
 
 echo -e ""
 echo -e "${#WORKER[@]} workers"
+
+
+
+echo -e ""
+
+echo -e "${#OCS[@]} OCS storage nodes"
+
+# check for infra nodes and suggest consideration 
+# if (( ${#OCS[@]} < 1 )); then
+#     echo -e "  ${RED}[WARNING]${NONE} no INFRA nodes or not properly tagged with node-role.kubernetes.io/infra=\"\"."
+# fi
+
+for filename in *.yaml; do
+  [ -e "$filename" ] || continue
+  [ ! -z "$(cat $filename |grep -w 'openshift-storage:')" ] && echo -e "- $filename" || true
+  # [ ! -z "$(cat $filename |grep -w 'openshift-storage')" ] && echo -e "            " && cat $filename |grep memory|grep -v "f:memory"|grep -v 'message' || true
+done
+
 
 
 
