@@ -1,11 +1,14 @@
 #!/bin/bash
 
+# must-gather path must be absolute!
 MUST_PATH=$1
 PLOT=$2
 STAMP=$(date +%Y-%m-%d_%H-%M-%S)
 REPORT_FOLDER="$HOME/ETCD-SUMMARY_$STAMP"
 ORIG_PATH=$(pwd)
 OUTPUT_PATH=$ORIG_PATH/DATA
+mkdir -p $OUTPUT_PATH
+echo "created $OUTPUT_PATH"
 
 mkdir -p $REPORT_FOLDER
 echo "created $REPORT_FOLDER"
@@ -457,33 +460,41 @@ compaction_check() {
 
 
 audit_logs() {
+  echo -e "[Analyzing Audit Logs - if present in must-gather]"
+  echo -e ""
   cd $MUST_PATH
   cd $(echo */)
-  cd audit_logs/kube-apiserver/
-  echo -e ""
-  echo -e "[API CONSUMERS kube-apiserver on masters]"
-  echo -e ""
-  AUDIT_LOGS=$(ls *.gz|grep audit)
-  node=""
+  if [ -d "audit_logs/kube-apiserver" ];
+  then
+    cd audit_logs/kube-apiserver/
+    echo -e ""
+    echo -e "[API CONSUMERS kube-apiserver on masters]"
+    echo -e ""
+    AUDIT_LOGS=$(ls *.gz|grep audit)
+    node=""
 
-  for i in $AUDIT_LOGS; do
-    #echo -e "[ extracting $i ]"
-    gzip -d $i  
-  done;
+    for i in $AUDIT_LOGS; do
+      #echo -e "[ extracting $i ]"
+      gzip -d $i  
+    done;
 
-  AUDIT_LOGS=$(ls *.log)
-  for i in $AUDIT_LOGS; do
-    echo -e "[ processing $i ]"
-    if [[ $i == *".log"* ]]; then
-      cat $i |jq '.user.username' -r > $OUTPUT_PATH/$(echo $i|cut -d ' ' -f2)_2sort.log
-      sort $OUTPUT_PATH/$(echo $i|cut -d ' ' -f2)_2sort.log | uniq -c | sort -bgr| head -10
-      echo -e ""
-    else
-      node=$i
-      continue
-    fi
+    AUDIT_LOGS=$(ls *.log)
+    for i in $AUDIT_LOGS; do
+      echo -e "[ processing $i ]"
+      if [[ $i == *".log"* ]]; then
+        cat $i |jq '.user.username' -r > $OUTPUT_PATH/$(echo $i|cut -d ' ' -f2)_2sort.log
+        sort $OUTPUT_PATH/$(echo $i|cut -d ' ' -f2)_2sort.log | uniq -c | sort -bgr| head -10
+        echo -e ""
+      else
+        node=$i
+        continue
+      fi
   
-  done;
+    done;
+  else
+    echo "must-gather does not include audit logs. Please run with the command:"
+    echo "$ oc adm must-gather -- /usr/bin/gather_audit_logs"
+  fi
 }
 
 # timed out waiting for read index response (local node might have slow network)
@@ -500,7 +511,9 @@ audit_logs
 
 echo -e ""
 echo -e "[NETWORKING]"
-cd ../../../cluster-scoped-resources/network.openshift.io/clusternetworks/
+cd $MUST_PATH
+cd $(echo */)
+cd cluster-scoped-resources/network.openshift.io/clusternetworks/
 cat default.yaml |grep CIDR
 cat default.yaml | grep serviceNetwork
 
