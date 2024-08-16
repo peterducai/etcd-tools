@@ -331,6 +331,7 @@ for member in "${ETCD[@]}"; do
   # echo -e ""
   OVERLOAD=$(cat $member/etcd/etcd/logs/current.log|grep 'overload'|wc -l)
   OVERLOADN=$(cat $member/etcd/etcd/logs/current.log|grep 'overload'|grep network|wc -l)
+  RAPOVERN=$(cat $member/etcd/etcd/logs/current.log|grep 'overload'|grep network |tail -n 1 |grep "remote-peer-active\":false")
   OVERLOADC=$(cat $member/etcd/etcd/logs/current.log|grep 'overload'|grep disk|wc -l)
   LAST=$(cat $member/etcd/etcd/logs/current.log|grep 'overload'|tail -1 |cut -d ':' -f1|cut -c 1-10)
   LOGEND=$(cat $member/etcd/etcd/logs/current.log|tail -1 |cut -d ':' -f1|cut -c 1-10)
@@ -356,8 +357,15 @@ for member in "${ETCD[@]}"; do
   else
     echo -e "   ${RED}[WARNING]${NONE} Found $OVERLOAD overloaded messages while there should be zero of them."
     echo -e ""
-    echo -e "   $OVERLOADN x OVERLOADED NETWORK in $member  (high network or remote storage latency)"
-    echo -e "   $OVERLOADC x OVERLOADED DISK/CPU in $member  (slow storage or lack of CPU on masters)"
+    if [[ -n $RAPOVERN ]]; then
+      echo -e "   - $OVERLOADN x OVERLOADED NETWORK in $member"
+      echo -e "     (high network or remote storage latency, the peer is not responding, missing the availability to connect to another member)"
+    else
+      echo -e "   - $OVERLOADN x OVERLOADED NETWORK in $member"
+      echo -e "     (high network or remote storage latency, the peer is responding, but too slow or only occasionally)"
+    fi
+    echo -e ""
+    echo -e "   - $OVERLOADC x OVERLOADED DISK/CPU in $member  (slow storage or lack of CPU on masters)"
     echo -e ""
     if [ "$LAST" = "$LOGEND" ]; then
       echo -e "   Warnings last seen on $LAST. ${RED}TODAY!${NONE}"
@@ -369,7 +377,6 @@ for member in "${ETCD[@]}"; do
     echo -e "   SOLUTION: Review ETCD and CPU metrics as this could be caused by CPU bottleneck or slow disk (or combination of both)."
     echo -e ""
   fi
-  echo -e ""
   
   # took too long
   if [ "$TOOK" != "0" ]; then
