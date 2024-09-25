@@ -1,17 +1,17 @@
 # openshift etcd-tools
 
-## etcd-mg.sh
+## must-gather-analyzer.sh
 
 ETCD script will make collect info from MUST-GATHER, make little summary and search for errors/issues and explains what are expected values.
 To use it, run
 
-> ./etcd-mg.sh [full path to MUST-GATHER]
+> ./must-gather-analyzer.sh [full path to MUST-GATHER]
 
 or if you're missing clusterversion in your logs, here is exa
 
-> ./etcd-mg.sh [full path to MUST-GATHER] false 4.10     
+> ./must-gather-analyzer.sh [full path to MUST-GATHER]   
 
-PS: false parameter is to disable gnuplot use
+
 
 ## must-gather-log_merger.sh
 

@@ -129,6 +129,7 @@ for filename in *.yaml; do
   [ -e "$filename" ] || continue
   [ ! -z "$(cat $filename |grep node-role|grep -w 'node-role.kubernetes.io/master:')" ] && echo -e "- $filename" && cat $filename |grep cpu|grep -v "f:cpu"|grep -v "m" || true
   [ ! -z "$(cat $filename |grep node-role|grep -w 'node-role.kubernetes.io/master:')" ] && cat $filename |grep memory|grep -v "f:memory"|grep -v 'message' || true
+  [ ! -z "$(cat $filename |grep node-role|grep -w 'node-role.kubernetes.io/master:')" ] && cat $filename |grep type|| true
 done
 echo -e ""
 
