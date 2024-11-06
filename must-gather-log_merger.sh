@@ -39,7 +39,7 @@ MUST_PATH=""
 ORIG_PATH=$(pwd)
 OUTPUT_PATH=$ORIG_PATH/DATA
 
-#rm -rf $OUTPUT_PATH
+rm -rf $OUTPUT_PATH
 mkdir -p $OUTPUT_PATH
 
 print_help() {
