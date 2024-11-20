@@ -193,7 +193,7 @@ echo -e ""
 echo -e ""
 echo -e "[size of objects in ETCD]"
 echo -e ""
-oc exec -n $ETCDNS $i -c etcdctl -- sh -c "etcdctl get / --prefix --keys-only  | grep -oE '^/[a-z|.]+/[a-z|.|8]*' | sort | uniq" | while read KEY; do printf "$KEY\t" && oc exec -n openshift-etcd $ETCD -c etcdctl -- etcdctl get $KEY --prefix --write-out=json | jq '[.kvs[].value | length] |add | ./1024/1024'; done | column -t  
+oc exec -n $ETCDNS $i -c etcdctl -- sh -c "etcdctl get / --prefix --keys-only  | grep -oE '^/[a-z|.]+/[a-z|.|8]*' | sort | uniq" | while read KEY; do printf "$KEY\t" && oc exec -n openshift-etcd $ETCD -c etcdctl -- etcdctl get $KEY --prefix --write-out=json | jq '[.kvs[].value | length] | add ' | numfmt --to=iec ; done | sort -k2 -hr | column -t
 echo -e ""
 
 echo -e "[MOST EVENTS keys]"
