@@ -190,6 +190,12 @@ echo -e "       ..."
 cat keysonly.txt | sed '/^$/d' | cut -d/ -f3 | sort | uniq -c | sort -rn|tail -6
 echo -e ""
 
+echo -e ""
+echo -e "[size of objects in ETCD]"
+echo -e ""
+oc exec -n $ETCDNS $i -c etcdctl -- sh -c "etcdctl get / --prefix --keys-only  | grep -oE '^/[a-z|.]+/[a-z|.|8]*' | sort | uniq" | while read KEY; do printf "$KEY\t" && oc exec -n openshift-etcd $ETCD -c etcdctl -- etcdctl get $KEY --prefix --write-out=json | jq '[.kvs[].value | length] |add | ./1024/1024'; done | column -t  
+echo -e ""
+
 echo -e "[MOST EVENTS keys]"
 echo -e ""
 cat keysonly.txt|grep event  |cut -d/ -f3,4| sort | uniq -c | sort -n --rev| head -14
