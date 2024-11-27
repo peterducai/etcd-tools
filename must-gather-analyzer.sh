@@ -388,9 +388,10 @@ for member in "${ETCD[@]}"; do
       TOD=$(cat $member/etcd/etcd/logs/current.log|grep 'overload'|grep disk|grep $LAST |wc -l)
       echo -e "   Today seen $TOD times."
       YESTER=$(date -d "$LOGEND - 24 hours" +%Y-%m-%d)
-      YESDISK=$(cat $member/etcd/etcd/logs/current.log|grep 'overload'|grep disk|wc -l)
-      YESNET=$(cat $member/etcd/etcd/logs/current.log|grep 'overload'|grep network|wc -l)
-      YESNETRAP=$(cat $member/etcd/etcd/logs/current.log|grep 'overload'|grep network |tail -n 1 |grep "remote-peer-active\":false"|wc -l)
+      YEST=$(cat $member/etcd/etcd/logs/current.log|grep 'overload'|grep $YESTER|wc -l)
+      YESDISK=$(cat $member/etcd/etcd/logs/current.log|grep 'overload'|grep disk|grep $YESTER|wc -l)
+      YESNET=$(cat $member/etcd/etcd/logs/current.log|grep 'overload'|grep network|grep $YESTER|wc -l)
+      YESNETRAP=$(cat $member/etcd/etcd/logs/current.log|grep 'overload'|grep network |tail -n 1 |grep "remote-peer-active\":false"|grep $YESTER|wc -l)
       echo -e "   Yesterday seen $YEST times."
       echo -e "       ${YESDISK}x slow disk"
       echo -e "       ${YESNET}x high network or remote storage latency, the peer is not responding"
