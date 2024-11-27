@@ -222,7 +222,8 @@ for router in $(ls); do
   BFR=$(cat $router/router/router/logs/current.log |grep 'buffer'|wc -l)
 # cat $router/router/router/logs/current.log |grep 'process'
   echo -e ""
-  echo "$router:"
+  echo -e "${GREEN}[$router]:${NONE}"
+  echo -e ""
   if [[ "$WATCH" -eq 0 ]];
   then
     echo -e "   no 'Unexpected watch close' message - ${GREEN}OK!${NONE}"
@@ -381,6 +382,7 @@ for member in "${ETCD[@]}"; do
     echo -e ""
     echo -e "   - $OVERLOADC x OVERLOADED DISK/CPU in $member  (slow storage or lack of CPU on masters)"
     echo -e ""
+    echo -e "   Log ends on $LOGEND"
     if [ "$LAST" = "$LOGEND" ]; then
       echo -e "   Warnings last seen on $LAST. ${RED}TODAY!${NONE}"
       TOD=$(cat $member/etcd/etcd/logs/current.log|grep 'overload'|grep disk|grep $LAST |wc -l)
@@ -392,7 +394,7 @@ for member in "${ETCD[@]}"; do
     else
       echo -e "   Warnings last seen on $LAST. ${GREEN}NOT TODAY!${NONE}"
     fi
-    echo -e "   Log ends on $LOGEND"
+    
     echo -e ""
     echo -e "   SOLUTION: Review ETCD and CPU metrics as this could be caused by CPU bottleneck or slow disk (or combination of both)."
     echo -e "             In case of SAN, issue might be network latency rather than storage itself."
@@ -415,9 +417,9 @@ for member in "${ETCD[@]}"; do
   # compaction
 
   echo -e "   [ETCD compaction]\n"
-  echo -e "   To avoid running out of space for writes to the keyspace, the etcd keyspace history must be compacted. Storage space itself may be reclaimed by defragmenting etcd members."
+  echo -e "   To avoid running out of space for writes to the keyspace, the etcd keyspace history must be compacted. (OCP by default auto-defragment)"
   echo -e "   Compaction should be below 200ms on small cluster, below 500ms on medium cluster and below 800ms on large cluster."
-  echo -e "   IMPORTANT: if compaction vary too much (and for example jumps from 100 to 600) it could mean masters are using shared storage or network storage with bad latency."
+  echo -e "   IMPORTANT: if compaction vary too much (difference 200ms+) it could mean masters are using shared storage or network storage with bad latency."
   echo -e ""
   cat $member/etcd/etcd/logs/current.log|grep compaction| tail -8 > $OUTPUT_PATH/$member-compat.data
   echo -e "   last compaction:\n"
