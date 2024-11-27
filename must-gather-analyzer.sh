@@ -108,6 +108,10 @@ done
 echo -e ""
 echo -e "${GREEN}- NODES --------------------${NONE}"
 echo -e ""
+
+
+# MASTERS / CONTROL PLANES
+
 echo -e "${#MASTER[@]} masters"
 
 # check if there's no more than supported number of masters (which is 3)
@@ -121,17 +125,20 @@ if (( ${#MASTER[@]} < 3 )); then
 fi
 
 echo -e ""
-echo -e "Minimum 4 vCPU (additional are strongly recommended)."
-echo -e "Minimum 16 GB RAM (additional memory is strongly recommended, especially if etcd is co-located on masters)."
+echo -e "Minimum 4 vCPU (good for small or development cluster where stability doesn't matter much)."
+echo -e "Minimum 16 GB RAM (for medium and large clusters)."
 echo -e ""
 
 for filename in *.yaml; do 
   [ -e "$filename" ] || continue
   [ ! -z "$(cat $filename |grep node-role|grep -w 'node-role.kubernetes.io/master:')" ] && echo -e "- $filename" && cat $filename |grep cpu|grep -v "f:cpu"|grep -v "m" || true
-  [ ! -z "$(cat $filename |grep node-role|grep -w 'node-role.kubernetes.io/master:')" ] && cat $filename |grep memory|grep -v "f:memory"|grep -v 'message' || true
-  [ ! -z "$(cat $filename |grep node-role|grep -w 'node-role.kubernetes.io/master:')" ] && cat $filename |grep type|| true
+  [ ! -z "$(cat $filename |grep node-role|grep -w 'node-role.kubernetes.io/master:')" ] && cat $filename |grep memory|grep -v "f:memory"|grep -v 'message' |grep -v 'k:'| head -n 1 || true
+  #[ ! -z "$(cat $filename |grep node-role|grep -w 'node-role.kubernetes.io/master:')" ] && cat $filename |grep type|| true
 done
 echo -e ""
+
+
+# INFRA NODES
 
 echo -e "${#INFRA[@]} infra nodes"
 
@@ -143,11 +150,15 @@ fi
 
 for filename in *.yaml; do
   [ -e "$filename" ] || continue
-  [ ! -z "$(cat $filename |grep node-role|grep -w 'node-role.kubernetes.io/infra:')" ] && echo -e "- $filename" &&cat $filename |grep cpu|grep -v "f:cpu"|grep -v "m" || true
-  [ ! -z "$(cat $filename |grep node-role|grep -w 'node-role.kubernetes.io/infra:')" ] && cat $filename |grep memory|grep -v "f:memory"|grep -v 'message' || true
+  [ ! -z "$(cat $filename |grep node-role|grep -w 'node-role.kubernetes.io/infra:')" ] && echo -e "- $filename" && cat $filename |grep cpu|grep -v "f:cpu"|grep -v "m" || true
+  [ ! -z "$(cat $filename |grep node-role|grep -w 'node-role.kubernetes.io/infra:')" ] && cat $filename |grep memory|grep -v "f:memory"|grep -v 'message'|grep -v 'k:'| head -n 1 || true
 done
 
 echo -e ""
+
+
+# WORKERS
+
 echo -e "${#WORKER[@]} workers"
 
 
@@ -163,8 +174,8 @@ echo -e "${#OCS[@]} OCS storage nodes"
 
 for filename in *.yaml; do
   [ -e "$filename" ] || continue
-  [ ! -z "$(cat $filename |grep -w 'openshift-storage:')" ] && echo -e "- $filename" || true
-  # [ ! -z "$(cat $filename |grep -w 'openshift-storage')" ] && echo -e "            " && cat $filename |grep memory|grep -v "f:memory"|grep -v 'message' || true
+  [ ! -z "$(cat $filename |grep -w 'openshift-storage:')" ] && echo -e "- $filename" && cat $filename |grep cpu|grep -v "f:cpu"|grep -v "m" || true
+  [ ! -z "$(cat $filename |grep -w 'openshift-storage:')" ] && cat $filename |grep memory|grep -v "f:memory"|grep -v 'message'|grep -v 'k:'| head -n 1 || true
 done
 
 
@@ -319,6 +330,8 @@ done
 # check if there's no more than supported number of masters (which is 3)
 if (( ${#ETCD[@]} > 3 )); then
     echo -e "    [WARNING] only 3 etcd members are supported, you have ${#ETCD[@]}."
+  else
+    echo -e "    found 3 etcd members - GOOD"
 fi
 
 # check if any master is missing
@@ -358,11 +371,11 @@ for member in "${ETCD[@]}"; do
   else
     echo -e "   ${RED}[WARNING]${NONE} Found $OVERLOAD overloaded messages while there should be zero of them."
     echo -e ""
-    if [[ -n $RAPOVERN ]]; then
+    if [[ -n $RAPOVERN || $RAPOVERN -lt 1 ]]; then
       echo -e "   - $OVERLOADN x OVERLOADED NETWORK in $member"
       echo -e "     (high network or remote storage latency, the peer is not responding, missing the availability to connect to another member)"
     else
-      echo -e "   - $OVERLOADN x OVERLOADED NETWORK in $member"
+      echo -e "   - $RAPOVERN x OVERLOADED NETWORK in $member"
       echo -e "     (high network or remote storage latency, the peer is responding, but too slow or only occasionally)"
     fi
     echo -e ""
@@ -370,12 +383,20 @@ for member in "${ETCD[@]}"; do
     echo -e ""
     if [ "$LAST" = "$LOGEND" ]; then
       echo -e "   Warnings last seen on $LAST. ${RED}TODAY!${NONE}"
+      TOD=$(cat $member/etcd/etcd/logs/current.log|grep 'overload'|grep disk|grep $LAST |wc -l)
+      echo -e "   Today seen $TOD times."
+      YESTER=$(date -d "$LOGEND - 24 hours" +%Y-%m-%d)
+      YEST=$(cat $member/etcd/etcd/logs/current.log|grep 'overload'|grep disk|wc -l)
+      echo -e "   Yesterday seen $YEST times."
+      echo -e ""
     else
       echo -e "   Warnings last seen on $LAST. ${GREEN}NOT TODAY!${NONE}"
     fi
     echo -e "   Log ends on $LOGEND"
     echo -e ""
     echo -e "   SOLUTION: Review ETCD and CPU metrics as this could be caused by CPU bottleneck or slow disk (or combination of both)."
+    echo -e "             In case of SAN, issue might be network latency rather than storage itself."
+    echo -e "   TIP: collect and investigate metrics as in https://access.redhat.com/solutions/5489721 "
     echo -e ""
   fi
   
@@ -408,6 +429,7 @@ for member in "${ETCD[@]}"; do
   echo -e ""
 
   # ntp
+  echo -e "   [NTP]"
   if [ "$CLOCK" != "0" ]; then
     echo -e "${RED}[WARNING]${NONE} we found $CLOCK ntp clock difference messages in $1"
     NTP=$(($NTP+$CLOCK))
@@ -430,15 +452,22 @@ for member in "${ETCD[@]}"; do
 
   # heartbeat
   echo -e ""
+  echo -e "   [HEARTBEAT]"
   if [ "$HEART" != "0" ]; then
     echo -e "   ${RED}[WARNING]${NONE} we found $HEART failed to send out heartbeat on time messages. Usually this issue is caused by a slow disk."
     HR=$(($HR+$HEART))
+    echo -e ""
+    echo -e "   NOTE:"
+    echo -e "   etcd has a 100ms tolerance for requests, which doesn't leave much time for latency."
+    echo -e "   Requests between members that take longer than 100ms will receive these errors, which if frequent enough"
+    echo -e "   can cause instability in the cluster and frequent leader re-elections."
   else
     echo -e "   no 'failed to send out heartbeat on time' messages found - ${GREEN}OK!${NONE}"
   fi
 
   # space
   echo -e ""
+  echo -e "   [DB SPACE]"
   if [ "$SPACE" != "0" ]; then
     echo -e "   ${RED}[WARNING]${NONE} we found $SPACE 'database space exceeded'"
     SP=$(($SP+$SPACE))
@@ -451,9 +480,15 @@ for member in "${ETCD[@]}"; do
 
   # leader changes
   echo -e ""
+  echo -e "   [LEADER CHANGES]"
   if [ "$LEADER" != "0" ]; then
     echo -e "   ${RED}[WARNING]${NONE} we found $LEADER 'leader changed'"
     LED=$(($LED+$LEADER))
+    echo -e ""
+    echo -e "   NOTE:"
+    echo -e "   When a leader fails, the etcd cluster automatically elects a new leader. The election does not happen instantly once the leader fails."
+    echo -e "   During the leader election the cluster cannot process any writes. Write requests sent during the election are queued for processing"
+    echo -e "   until a new leader is elected. Writes already sent to the old leader but not yet committed may be lost."
   else
     echo -e "   no 'leader changed' messages found - ${GREEN}OK!${NONE}"
   fi

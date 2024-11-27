@@ -46,7 +46,7 @@ mkdir -p $OUTPUT_PATH
 
 print_help() {
   echo -e "HELP:"
-  echo -e "-k | --kubectl : use kubectl instead of oc (experimental)"
+  #echo -e "-k | --kubectl : use kubectl instead of oc (experimental)"
   echo -e "-h | --help : print this help"
   echo -e ""
 }
