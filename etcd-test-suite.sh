@@ -35,7 +35,7 @@
 STAMP=$(date +%Y-%m-%d_%H-%M-%S)
 CLIENT="oc"
 ETCDNS='openshift-etcd'
-MUST_PATH=$1
+
 ORIG_PATH=$(pwd)
 OUTPUT_PATH=$ORIG_PATH/DATA
 
@@ -45,42 +45,6 @@ OUTPUT_PATH=$ORIG_PATH/DATA
 
 declare -A NIC
 
-
-# rm -rf $OUTPUT_PATH
-# mkdir -p $OUTPUT_PATH
-
-# PARSER --------------------------------------------------------------------------
-
-# print_help() {
-#   echo -e "HELP:"
-#   #echo -e "-k | --kubectl : use kubectl instead of oc (experimental)"
-#   echo -e "-h | --help : print this help"
-#   echo -e ""
-# }
-
-# PARAMS=""
-# while (( "$#" )); do
-#   case "$1" in
-#     -k|--kubectl)
-#       CLIENT="kubectl"
-#       ETCDNS="kube-system"
-#       shift
-#       ;;
-#     -*|--*=) # unsupported flags
-#       echo "Error: Unsupported flag $1" >&2
-#       print_help
-#       exit 1
-#       ;;
-#     *) # preserve positional arguments
-#       PARAMS="$PARAMS $1"
-#       shift
-#       ;;
-#   esac
-# done
-# # set positional arguments in their proper place
-# eval set -- "$PARAMS"
-
-#---------------------------------------------------------------------------------
 
 
 
@@ -101,12 +65,14 @@ dropped_packet_check() {
     do 
       echo "$j"
       IPLINK=$(oc exec $i -c etcd -n openshift-etcd  -- ip -s link show dev $j)
+      # NIC["$i.$j"]=$IPLINK
       # echo "-----------------------------------"
       # echo $IPLINK
       # echo "-----------------------------------"
       # echo $IPLINK|awk ' { print $30 } '|tail -2
       # echo "-----------------------------------"
       DROPRX=$(echo $IPLINK|awk ' { print $30 } '|tail -1|head -1)
+      NIC["$i.nic.$j.drop_rx"]=$DROPRX
       if [[ $DROPRX > 0 ]]; then
         echo -e "    Dropped RX: $DROPRX"
       fi
@@ -118,6 +84,7 @@ dropped_packet_check() {
       #echo -e "    Error RX: $ERRRX"
       
       DROPTX=$(echo $IPLINK|awk ' { print $43 } '|tail -3|head -1)
+      NIC["$i.$j.drop_tx"]=$DROPTX
       if [[ $DROPTX > 0 ]]; then
         echo -e "    Dropped TX: $DROPTX"
       fi
@@ -129,25 +96,14 @@ dropped_packet_check() {
       
     done
   done
+
+  # PRINT NIC()
+  # printf -v fmtStr '[%s]=%%q\\n' "${!NIC[@]}";printf "$fmtStr" "${NIC[@]}"
 }
 
-error_packet_check() {
-  echo -e "Checking for error on packets on etcd interfaces\n"
-  
-  for i in $(oc get pod -n openshift-etcd|grep -v guard|tail -3|awk ' { print $1 }')
-  do 
-    echo -e "\n[$i]\n"
-    for j in $(oc exec $i -n openshift-etcd -c etcd -- ip -4 -brief address show|awk ' { print $1 }')
-    do 
-      echo "$j"
-      
-      
-      
-      
-    done
-  done
-}
+# compare 2 arrays
 
+#echo ${Array1[@]} ${Array1[@]} ${Array2[@]} | tr ' ' '\n' | sort | uniq -u
 
 dropped_packet_check
 
