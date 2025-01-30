@@ -265,7 +265,7 @@ done;
 
 
 
-
+# oc describe nodes  | awk 'BEGIN{ovnsubnet="";printf "|%s|||||%s|||||%s||%s\n%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s\n","CPU","MEM","PODs","OVN","NODENAME","Allocatable","Request","(%)","Limit","(%)","Allocatable","Request","(%)","Limit","(%)","Allocatable","Running","Node Subnet"}{if($1 == "Name:"){name=$2};if($1 == "k8s.ovn.org/node-subnets:"){ovnsubnet=$2};if($1 ~ "Allocatable:"){while($1 != "System"){if($1 == "cpu:"){Alloc_cpu=$2};if($1 == "memory:"){Alloc_mem=$2};if($1 == "pods:"){Alloc_pod=$2};getline}};if($1 == "Namespace"){getline;getline;pods_count=0;while($1 != "Allocated"){pods_count++;getline}};if($1 == "Resource"){while($1 != "Events:"){if($1 == "cpu"){req_cpu=$2;preq_cpu=$3;lim_cpu=$4;plim_cpu=$5};if($1 == "memory"){req_mem=$2;preq_mem=$3;lim_mem=$4;plim_mem=$5};getline};printf "%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s\n",name,Alloc_cpu,req_cpu,preq_cpu,lim_cpu,plim_cpu,Alloc_mem,req_mem,preq_mem,lim_mem,plim_mem,Alloc_pod,pods_count,ovnsubnet}}' | sed -e "s/{\"default\":\[\{0,1\}\"\([.\/0-9]*\)\"\]\{0,1\}\]}/\1/" | column -s'|' -t
 
 
 
@@ -309,3 +309,44 @@ done;
     # [...]
     # sh-4.4# chroot /host bash
     # [root@<master_node> /]# podman run --volume /var/lib/etcd:/var/lib/etcd:Z quay.io/openshift-scale/etcd-perf
+
+
+
+
+
+
+# echo -e " etcd health and size"
+# for POD in $(oc get pod -n openshift-etcd | awk '/etcd-/ {print $1}' | grep -v quorum | grep -v guard); do
+#     echo "   $POD"
+#     echo "$POD" &> ${DIR}/etcd_status_health_"$POD".out
+#     oc -n openshift-etcd exec -c etcd "$POD" -- /bin/bash -c "etcdctl member list -w table;
+#     echo "---"; 
+#     etcdctl endpoint status -w table; 
+#     echo "---";
+#     etcdctl endpoint health -w table" &> ${DIR}/etcd_status_health_"$POD".out
+# done 
+
+# echo -e " etcd metrics"
+# echo -e " ...  metric etcd_disk_wal_fsync_duration"
+
+# curl -g -k -H "Authorization: Bearer $($prometheusTokenCommand)" https://"$PROMETHEUS_ROUTE"/api/v1/query? --data-urlencode 'query=histogram_quantile(0.99, sum(rate(etcd_disk_wal_fsync_duration_seconds_bucket{job="etcd"}[5m])) by (instance, le))' > ${DIR}/etcd_disk_wal_fsync_duration_seconds_bucket_99.json 2> ${DIR}/etcd_disk_wal_fsync_duration_seconds_bucket_err.json
+
+# curl -g -k -H "Authorization: Bearer $($prometheusTokenCommand)" https://"$PROMETHEUS_ROUTE"/api/v1/query? --data-urlencode 'query=histogram_quantile(0.999, sum(rate(etcd_disk_wal_fsync_duration_seconds_bucket{job="etcd"}[5m])) by (instance, le))' > ${DIR}/etcd_disk_wal_fsync_duration_seconds_bucket_999.json 2> ${DIR}/etcd_disk_wal_fsync_duration_seconds_bucket_err.json
+# ###
+
+# echo -e " ...  metric etcd_disk_backend_commit_duration"
+# curl -g -k -H "Authorization: Bearer $($prometheusTokenCommand)" https://"$PROMETHEUS_ROUTE"/api/v1/query? --data-urlencode 'query=histogram_quantile(0.99, sum(rate(etcd_disk_backend_commit_duration_seconds_bucket{job="etcd"}[5m])) by (instance, le))' > ${DIR}/etcd_disk_backend_commit_duration_seconds_bucket_99.json 2> ${DIR}/etcd_disk_backend_commit_duration_seconds_bucket_err.json
+
+# curl -g -k -H "Authorization: Bearer $($prometheusTokenCommand)" https://"$PROMETHEUS_ROUTE"/api/v1/query? --data-urlencode 'query=histogram_quantile(0.999, sum(rate(etcd_disk_backend_commit_duration_seconds_bucket{job="etcd"}[5m])) by (instance, le))' > ${DIR}/etcd_disk_backend_commit_duration_seconds_bucket_999.json 2> ${DIR}/etcd_disk_backend_commit_duration_seconds_bucket_err.json
+
+# echo -e " ...  metric for cpu iowait"
+# curl -g -k -H "Authorization: Bearer $($prometheusTokenCommand)" https://"$PROMETHEUS_ROUTE"/api/v1/query? --data-urlencode 'query=(sum(irate(node_cpu_seconds_total {mode="iowait"} [2m])) without (cpu)) / count(node_cpu_seconds_total) without (cpu) * 100 AND on (instance) label_replace( kube_node_role{role="master"}, "instance", "$1", "node", "(.+)" )' > ${DIR}/etcd_cpu_iowait.json 2> ${DIR}/etcd_cpu_iowait_err.json
+
+# echo -e " ...  metric etcd_network_peer_round_trip_time"
+# curl -g -k -H "Authorization: Bearer $($prometheusTokenCommand)" https://"$PROMETHEUS_ROUTE"/api/v1/query? --data-urlencode 'query=histogram_quantile(0.99, irate(etcd_network_peer_round_trip_time_seconds_bucket[5m]))' > ${DIR}/etcd_etcd_network_peer_round_trip_time_99.json 2> ${DIR}/etcd_etcd_network_peer_round_trip_time_err.json
+
+# curl -g -k -H "Authorization: Bearer $($prometheusTokenCommand)" https://"$PROMETHEUS_ROUTE"/api/v1/query? --data-urlencode 'query=histogram_quantile(0.999, irate(etcd_network_peer_round_trip_time_seconds_bucket[5m]))' > ${DIR}/etcd_etcd_network_peer_round_trip_time_999.json 2> ${DIR}/etcd_etcd_network_peer_round_trip_time_err.json
+# ###
+
+# echo -e " ...  openshift-etcd alerts firing"
+# curl -g -k -H "Authorization: Bearer $($prometheusTokenCommand)" https://"$PROMETHEUS_ROUTE"/api/v1/query? --data-urlencode 'query=count_over_time(ALERTS{namespace="openshift-etcd", alertstate="firing"}[2w])' > ${DIR}/etcd_firing_alerts.json 2> ${DIR}/etcd__firing_alerts_err.json
