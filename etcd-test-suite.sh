@@ -110,11 +110,22 @@ dropped_packet_check() {
       if [[ $DROPRX > 0 ]]; then
         echo -e "    Dropped RX: $DROPRX"
       fi
+
+      # ERRRX=$(echo $IPLINK||awk ' { print $29 } '|tail -1|head -1)
+      # if [[ $ERRRX > 0 ]]; then
+      #   echo -e "    Error RX: $ERRRX"
+      # fi
+      #echo -e "    Error RX: $ERRRX"
       
       DROPTX=$(echo $IPLINK|awk ' { print $43 } '|tail -3|head -1)
       if [[ $DROPTX > 0 ]]; then
         echo -e "    Dropped TX: $DROPTX"
       fi
+
+      # ERRTX=$(echo $IPLINK||awk ' { print $42 } '|tail -3|head -1)
+      # if [[ $ERRTX > 0 ]]; then
+      #   echo -e "    Error TX: $ERRTX"
+      # fi
       
     done
   done
@@ -129,15 +140,9 @@ error_packet_check() {
     for j in $(oc exec $i -n openshift-etcd -c etcd -- ip -4 -brief address show|awk ' { print $1 }')
     do 
       echo "$j"
-      ERRTX=$(oc exec $i -c etcd -n openshift-etcd  -- ip -s link show dev $j|awk ' { print $3 } '|tail -1|head -1)
-      if [[ $ERRTX > 0 ]]; then
-        echo -e "    Error TX: $DROPTX"
-      fi
       
-      ERRRX=$(oc exec $i -c etcd -n openshift-etcd  -- ip -s link show dev $j|awk ' { print $3 } '|tail -3|head -1)
-      if [[ $ERRRX > 0 ]]; then
-        echo -e "    Error RX: $DROPRX"
-      fi
+      
+      
       
     done
   done
