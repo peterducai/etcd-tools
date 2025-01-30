@@ -43,7 +43,7 @@ OUTPUT_PATH=$ORIG_PATH/DATA
 
 # TEST VALUES
 
-declare -A NIC=()
+declare -A NIC
 
 
 # rm -rf $OUTPUT_PATH
@@ -91,24 +91,60 @@ ETCD=( $($CLIENT --as system:admin -n $ETCDNS get -l k8s-app=etcd pods -o name |
 # echo -e "API URL: $API"
 # TOKEN=$(oc whoami -t)
 
-
-
-for i in $(oc get pod -n openshift-etcd|grep -v guard|tail -3|awk ' { print $1 }')
-do 
-  echo -e "\n[$i]\n"
-  for j in $(oc exec $i -n openshift-etcd -c etcd -- ip -4 -brief address show|awk ' { print $1 }')
+dropped_packet_check() {
+  echo -e "Checking for dropped packets on etcd interfaces\n"
+  
+  for i in $(oc get pod -n openshift-etcd|grep -v guard|tail -3|awk ' { print $1 }')
   do 
-    echo "checking $j"
-    DROPTX=$(oc exec $i -c etcd -n openshift-etcd  -- ip -s link show dev $j|awk ' { print $4 } '|tail -1|head -1)
-    echo -e "Dropped TX: $(oc exec $i -c etcd -n openshift-etcd  -- ip -s link show dev $j|awk ' { print $4 } '|tail -1|head -1)"
-    DROPRX=$(oc exec $i -c etcd -n openshift-etcd  -- ip -s link show dev $j|awk ' { print $4 } '|tail -3|head -1)
-    echo -e "Dropped RX: $DROPRX"
+    echo -e "\n[$i]\n"
+    for j in $(oc exec $i -n openshift-etcd -c etcd -- ip -4 -brief address show|awk ' { print $1 }')
+    do 
+      echo "$j"
+      IPLINK=$(oc exec $i -c etcd -n openshift-etcd  -- ip -s link show dev $j)
+      # echo "-----------------------------------"
+      # echo $IPLINK
+      # echo "-----------------------------------"
+      # echo $IPLINK|awk ' { print $30 } '|tail -2
+      # echo "-----------------------------------"
+      DROPRX=$(echo $IPLINK|awk ' { print $30 } '|tail -1|head -1)
+      if [[ $DROPRX > 0 ]]; then
+        echo -e "    Dropped RX: $DROPRX"
+      fi
+      
+      DROPTX=$(echo $IPLINK|awk ' { print $43 } '|tail -3|head -1)
+      if [[ $DROPTX > 0 ]]; then
+        echo -e "    Dropped TX: $DROPTX"
+      fi
+      
+    done
   done
-done
+}
+
+error_packet_check() {
+  echo -e "Checking for error on packets on etcd interfaces\n"
+  
+  for i in $(oc get pod -n openshift-etcd|grep -v guard|tail -3|awk ' { print $1 }')
+  do 
+    echo -e "\n[$i]\n"
+    for j in $(oc exec $i -n openshift-etcd -c etcd -- ip -4 -brief address show|awk ' { print $1 }')
+    do 
+      echo "$j"
+      ERRTX=$(oc exec $i -c etcd -n openshift-etcd  -- ip -s link show dev $j|awk ' { print $3 } '|tail -1|head -1)
+      if [[ $ERRTX > 0 ]]; then
+        echo -e "    Error TX: $DROPTX"
+      fi
+      
+      ERRRX=$(oc exec $i -c etcd -n openshift-etcd  -- ip -s link show dev $j|awk ' { print $3 } '|tail -3|head -1)
+      if [[ $ERRRX > 0 ]]; then
+        echo -e "    Error RX: $DROPRX"
+      fi
+      
+    done
+  done
+}
 
 
-
-
+dropped_packet_check
 
 
 
