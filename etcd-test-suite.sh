@@ -44,6 +44,9 @@ OUTPUT_PATH=$ORIG_PATH/DATA
 # TEST VALUES
 
 declare -A NIC
+declare -A NIC2
+declare -A ETCD_OBJECTS
+declare -A ETCD_OBJECTS2
 
 
 
@@ -55,12 +58,43 @@ ETCD=( $($CLIENT --as system:admin -n $ETCDNS get -l k8s-app=etcd pods -o name |
 # echo -e "API URL: $API"
 # TOKEN=$(oc whoami -t)
 
+
+
+object_size() {
+  for i in $(oc get pod -n openshift-etcd|grep -v guard|tail -3|awk ' { print $1 }')
+  do
+    echo -e ""
+    echo -e "[NUMBER OF OBJECTS IN ETCD]  $(date +%Y-%m-%d_%H:%M:%S)"
+    echo -e ""
+    $CLIENT exec -n $ETCDNS $i -c etcdctl -n $ETCDNS -- etcdctl get / --prefix --keys-only > keysonly.txt
+    cat keysonly.txt | sed '/^$/d' | cut -d/ -f3 | sort | uniq -c | sort -rn|head -14
+
+
+    #TODO
+    # cat peptides.txt | while read line 
+    # do
+    #   ETCD_OBJECTS["$i.etcd_objects.$j.drop_rx"]=$number
+    # done
+    
+    # echo -e "       ..."
+    # cat keysonly.txt | sed '/^$/d' | cut -d/ -f3 | sort | uniq -c | sort -rn|tail -6
+    # echo -e ""
+    
+    # echo -e ""
+    # echo -e "[size of objects in ETCD]"
+    # echo -e ""
+    # oc exec -n $ETCDNS $i -c etcdctl -- sh -c "etcdctl get / --prefix --keys-only  | grep -oE '^/[a-z|.]+/[a-z|.|8]*' | sort | uniq" | while read KEY; do printf "$KEY\t" && oc exec -n openshift-etcd $i -c etcdctl -- etcdctl get $KEY --prefix --write-out=json | jq '[.kvs[].value | length] | add ' | numfmt --to=iec ; done | sort -k2 -hr | column -t
+    # echo -e ""
+    return
+  done
+}
+
 dropped_packet_check() {
-  echo -e "Checking for dropped packets on etcd interfaces\n"
+  echo -e "[NICs] $(date +%Y-%m-%d_%H:%M:%S)\n"
   
   for i in $(oc get pod -n openshift-etcd|grep -v guard|tail -3|awk ' { print $1 }')
   do 
-    echo -e "\n[$i]\n"
+    echo -e "[$i]\n"
     for j in $(oc exec $i -n openshift-etcd -c etcd -- ip -4 -brief address show|awk ' { print $1 }')
     do 
       echo "$j"
@@ -105,8 +139,9 @@ dropped_packet_check() {
 
 #echo ${Array1[@]} ${Array1[@]} ${Array2[@]} | tr ' ' '\n' | sort | uniq -u
 
+object_size
 dropped_packet_check
-
+object_size
 
 
 
