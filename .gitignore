@@ -5,3 +5,7 @@ presentation.txt
 checksums.txt
 .gitignore
 checksums.txt.asc
+cluster-key
+install-config
+install-config.yaml
+xsonly.txt

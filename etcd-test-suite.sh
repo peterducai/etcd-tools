@@ -58,7 +58,12 @@ ETCD=( $($CLIENT --as system:admin -n $ETCDNS get -l k8s-app=etcd pods -o name |
 # echo -e "API URL: $API"
 # TOKEN=$(oc whoami -t)
 
-
+drop_packets() {
+  for mast in $MASTERS; do
+    echo -e "ssh -i ~/Downloads/sbr-shift-key core@$mast.sbr-shift.gsslab.brq2.redhat.com 'sudo -i tc qdisc replace dev br-ex root netem loss 5%'"
+    ssh -i ~/Downloads/sbr-shift-key core@$mast.sbr-shift.gsslab.brq2.redhat.com 'sudo -i tc qdisc replace dev br-ex root netem loss 5%'
+  done
+}
 
 object_size() {
   for i in $(oc get pod -n openshift-etcd|grep -v guard|tail -3|awk ' { print $1 }')
@@ -135,16 +140,78 @@ dropped_packet_check() {
   # printf -v fmtStr '[%s]=%%q\\n' "${!NIC[@]}";printf "$fmtStr" "${NIC[@]}"
 }
 
+dropped_packet_check2() {
+  echo -e "[NICs] $(date +%Y-%m-%d_%H:%M:%S)\n"
+  
+  for i in $(oc get pod -n openshift-etcd|grep -v guard|tail -3|awk ' { print $1 }')
+  do 
+    echo -e "[$i]\n"
+    for j in $(oc exec $i -n openshift-etcd -c etcd -- ip -4 -brief address show|awk ' { print $1 }')
+    do 
+      echo "$j"
+      IPLINK=$(oc exec $i -c etcd -n openshift-etcd  -- ip -s link show dev $j)
+      # NIC["$i.$j"]=$IPLINK
+      # echo "-----------------------------------"
+      # echo $IPLINK
+      # echo "-----------------------------------"
+      # echo $IPLINK|awk ' { print $30 } '|tail -2
+      # echo "-----------------------------------"
+      DROPRX=$(echo $IPLINK|awk ' { print $30 } '|tail -1|head -1)
+      NIC2["$i.nic.$j.drop_rx"]=$DROPRX
+      if [[ $DROPRX > 0 ]]; then
+        echo -e "    Dropped RX: $DROPRX"
+      fi
+
+      # ERRRX=$(echo $IPLINK||awk ' { print $29 } '|tail -1|head -1)
+      # if [[ $ERRRX > 0 ]]; then
+      #   echo -e "    Error RX: $ERRRX"
+      # fi
+      #echo -e "    Error RX: $ERRRX"
+      
+      DROPTX=$(echo $IPLINK|awk ' { print $43 } '|tail -3|head -1)
+      NIC2["$i.$j.drop_tx"]=$DROPTX
+      if [[ $DROPTX > 0 ]]; then
+        echo -e "    Dropped TX: $DROPTX"
+      fi
+
+      # ERRTX=$(echo $IPLINK||awk ' { print $42 } '|tail -3|head -1)
+      # if [[ $ERRTX > 0 ]]; then
+      #   echo -e "    Error TX: $ERRTX"
+      # fi
+      
+    done
+  done
+
+  # PRINT NIC()
+  # printf -v fmtStr '[%s]=%%q\\n' "${!NIC[@]}";printf "$fmtStr" "${NIC[@]}"
+}
+
 # compare 2 arrays
 
 #echo ${Array1[@]} ${Array1[@]} ${Array2[@]} | tr ' ' '\n' | sort | uniq -u
 
 object_size
 dropped_packet_check
+drop_packets
 object_size
+dropped_packet_check2
 
 
-
+echo -e "comparing arrays"
+for key in $(printf "%s\n" "${!NIC[@]}" "${!NIC2[@]}" | sort -u); do
+  while read -r key
+  do
+      [[ -z "${NIC[$key]}" ]] && echo "NIC[$key] does not exist" && continue
+      [[ -z "${NIC2[$key]}" ]] && echo "NIC2[$key] does not exist" && continue
+  
+      [[ "${NIC[$key]}" == "${NIC2[$key]}" ]] && echo  "." && continue  #"NIC[$key]=${NIC[$key]} == ${NIC2[$key]}=NIC2[$key]" && continue
+  
+      # at this point they are different so ...
+  
+      echo "NIC[$key]=${NIC[$key]} != ${NIC2[$key]}=NIC2[$key]"
+  
+  done < <(printf "%s\n" "${!NIC[@]}" "${!NIC2[@]}" | sort -u)
+done
 
 
 # 
