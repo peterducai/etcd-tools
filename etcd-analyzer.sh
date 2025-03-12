@@ -96,6 +96,14 @@ do
 done
 }
 
+
+apiserver_check() {
+  echo -e "API latency:"
+  echo -e ""
+  oc get po -n openshift-apiserver -o json | jq '.items[].metadata.name' -r | while read OPENSHIFT_APISERVER; do oc get po -n openshift-etcd -o name -l etcd -o json | jq '.items[].status.podIP' -r | while read ETCD_IP; do printf "==> $OPENSHIFT_APISERVER\t" && oc exec -n openshift-apiserver $OPENSHIFT_APISERVER -c openshift-apiserver -- curl -ks -w "remote_ip: %{remote_ip} response_code: %{response_code} time_namelookup: %{time_namelookup} time_connect: %{time_connect} time_total: %{time_total}\n"  -o /dev/null --cacert /run/configmaps/etcd-serving-ca/ca-bundle.crt --cert /run/secrets/etcd-client/tls.crt --key /run/secrets/etcd-client/tls.key "https://${ETCD_IP}:2379/version" ; done; done | column -t
+  echo -e ""
+}
+
 overload_test() {
   echo -e ""
   $CLIENT logs $i -c etcd -n $ETCDNS|grep overloaded > $OUTPUT_PATH/over.txt
@@ -174,7 +182,7 @@ analyze_members() {
 
 
 
-
+apiserver_check
 analyze_members
 
 

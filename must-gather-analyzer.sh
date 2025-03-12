@@ -194,6 +194,7 @@ echo -e ""
 cd ../../config.openshift.io
 cat networks.yaml|grep 'networkType' |uniq
 cat networks.yaml|grep 'cidr' |uniq
+cat infrastructures.yaml |grep Platform
 
 # [ -d "../persistentvolumes" ] && PVCS=$(ls) && PV_NUMBER=$(ls|wc -l) && echo -e "There are $PV_NUMBER PVs in cluster" || echo -e "${RED}No PV files found. MISSING.${NONE}"
 
