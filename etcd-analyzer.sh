@@ -104,6 +104,10 @@ apiserver_check() {
   echo -e ""
 }
 
+etcd_lat(){
+  oc get node -o name -l node-role.kubernetes.io/master= -o json | jq -r '.items[].metadata.name' | while read -r MASTER_NODE; do oc debug "node/${MASTER_NODE}" -q --to-namespace=openshift-etcd -- chroot /host sh -c 'export KUBECONFIG=/etc/kubernetes/static-pod-resources/kube-apiserver-certs/secrets/node-kubeconfigs/localhost-recovery.kubeconfig; REVISION=$(jq -r ".metadata.labels.revision" /etc/kubernetes/manifests/etcd-pod.yaml); oc get po -n openshift-etcd -o json -l etcd | jq -r ".items[] | [(.metadata.name | gsub(\"^etcd-\"; \"etcd-peer-\")), .status.podIP] | @tsv" | while read -r ETCD_PEER_NAME ETCD_IP; do printf "==> $HOSTNAME\t" && curl -sk -w "remote_ip: %{remote_ip} response_code: %{response_code} time_namelookup: %{time_namelookup} time_connect: %{time_connect} time_total: %{time_total}\n"  -o /dev/null --cacert /etc/kubernetes/static-pod-resources/etcd-pod-${REVISION}/configmaps/etcd-peer-client-ca/ca-bundle.crt --cert /etc/kubernetes/static-pod-resources/etcd-pod-${REVISION}/secrets/etcd-all-certs/${ETCD_PEER_NAME}.crt --key /etc/kubernetes/static-pod-resources/etcd-pod-${REVISION}/secrets/etcd-all-certs/${ETCD_PEER_NAME}.key "https://${ETCD_IP}:2379/version"; done'; done | column -t 
+}
+
 overload_test() {
   echo -e ""
   $CLIENT logs $i -c etcd -n $ETCDNS|grep overloaded > $OUTPUT_PATH/over.txt
@@ -183,6 +187,7 @@ analyze_members() {
 
 
 apiserver_check
+etcd_lat
 analyze_members
 
 
@@ -265,6 +270,9 @@ for i in $AUDIT_LOGS; do
 done;
 
 
+echo -e ""
+echo -e "number of events per NS"
+for j in $(oc get ns|awk '{print $1}'); do echo "$j $(oc get events -n $j|wc -l)"; done
 
 
 
