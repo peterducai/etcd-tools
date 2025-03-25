@@ -1,7 +1,8 @@
 #!/bin/bash
 
 num=1 
-
+echo -e "-ETCD----------------------------------------"
+echo ""
 for item in `oc get pod -n openshift-etcd --no-headers | awk '{print $1}'`
 do
     echo "[ETCD POD $num]"
@@ -20,7 +21,8 @@ done
 
 
 num=1
-
+echo -e "-Routers----------------------------------------"
+echo ""
 for item in `oc get pod -n openshift-ingress --no-headers | awk '{print $1}'`
 do
     echo "[ROUTER POD $num]"
@@ -38,7 +40,8 @@ do
 done
 
 num=1
-
+echo -e "-Apiserver----------------------------------------"
+echo ""
 for item in `oc get pod -n openshift-kube-apiserver --no-headers|grep -i running | awk '{print $1}'`
 do
     echo "[APISERVER POD $num]"
@@ -52,4 +55,52 @@ do
     echo ""
     echo ""
     num=$(($num+1))
+done
+
+
+num=1
+echo -e "-Network operator----------------------------------------"
+echo ""
+for item in `oc get pod -n openshift-network-operator --no-headers|grep -i running | awk '{print $1}'`
+do
+    echo "[Network Operator POD $num]"
+    echo ""
+    echo "timed out: $(oc logs -n openshift-network-operator $item |grep 'timed out'|wc -l)"
+    echo "context deadline exceeded: $(oc logs -n openshift-network-operator $item |grep 'deadline exceeded'|wc -l)"
+    echo "timeout: $(oc logs -n openshift-network-operator $item  |grep 'timeout'|wc -l)"
+    echo "process: $(oc logs -n openshift-network-operator $item  |grep 'process'|wc -l)"
+    echo "clock: $(oc logs -n openshift-network-operator $item  |grep 'clock'|wc -l)"    
+    echo "buffer: $(oc logs -n openshift-network-operator $item  |grep 'error adding container to network'|wc -l)"    
+    echo "buffer: $(oc logs -n openshift-network-operator $item  |grep 'error adding container to network'|wc -l)"   
+    echo ""
+    echo ""
+    num=$(($num+1))
+done
+
+
+num=1
+echo -e "-OVN----------------------------------------"
+echo ""
+for item in `oc get pod -n openshift-ovn-kubernetes --no-headers|grep control|grep -i running | awk '{print $1}'`
+do
+    echo "[OVN POD $num]"
+    echo ""
+    echo "Unreasonably long poll interval: $(oc logs -n openshift-ovn-kubernetes $item -c ovnkube-cluster-manager |grep 'Unreasonably long'|wc -l)"
+    echo "timeout at: $(oc logs -n openshift-ovn-kubernetes $item -c ovnkube-cluster-manager |grep 'timeout at'|wc -l)"    
+    echo "OVNNB/SB commit failed, force recompute next time: $(oc logs -n openshift-ovn-kubernetes $item -c ovnkube-cluster-manager |grep 'commit failed'|wc -l)"    
+    echo "no response to inactivity probe: $(oc logs -n openshift-ovn-kubernetes $item -c ovnkube-cluster-manager |grep 'no response to inactivity probe'|wc -l)"   
+    echo ""
+    echo ""
+    num=$(($num+1))
+done
+
+
+num=1
+echo -e "-Machine Configs----------------------------------------"
+echo ""
+for node in $(oc get nodes -o name | awk -F'/' '{ print $2 }')
+do
+  echo "[NODE $num]"
+  oc describe node $node | grep machineconfiguration.openshift.io/state
+  num=$(($num+1))
 done
