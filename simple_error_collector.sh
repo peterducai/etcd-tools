@@ -81,18 +81,23 @@ done
 num=1
 echo -e "-OVN----------------------------------------"
 echo ""
-for item in `oc get pod -n openshift-ovn-kubernetes --no-headers|grep control|grep -i running | awk '{print $1}'`
+for item in `oc get pod -n openshift-ovn-kubernetes --no-headers|grep node|grep -i running | awk '{print $1}'`
 do
-    echo "[OVN POD $num]"
+    echo "[OVN POD $num NORTHDB]"
     echo ""
-    echo "Unreasonably long poll interval: $(oc logs -n openshift-ovn-kubernetes $item -c ovnkube-cluster-manager |grep 'Unreasonably long'|wc -l)"
-    echo "timeout at: $(oc logs -n openshift-ovn-kubernetes $item -c ovnkube-cluster-manager |grep 'timeout at'|wc -l)"    
-    echo "OVNNB/SB commit failed, force recompute next time: $(oc logs -n openshift-ovn-kubernetes $item -c ovnkube-cluster-manager |grep 'commit failed'|wc -l)"    
-    echo "no response to inactivity probe: $(oc logs -n openshift-ovn-kubernetes $item -c ovnkube-cluster-manager |grep 'no response to inactivity probe'|wc -l)"   
+    echo "Unreasonably long poll interval: $(oc logs -n openshift-ovn-kubernetes $item -c northd |grep 'Unreasonably long'|wc -l)"
+    echo "timeout at: $(oc logs -n openshift-ovn-kubernetes $item -c northd |grep 'timeout at'|wc -l)"    
+    echo "OVNNB/SB commit failed, force recompute next time: $(oc logs -n openshift-ovn-kubernetes $item -c northd |grep 'commit failed'|wc -l)"    
+    echo "no response to inactivity probe: $(oc logs -n openshift-ovn-kubernetes $item -c northd |grep 'no response to inactivity probe'|wc -l)"   
     echo ""
     echo ""
     num=$(($num+1))
 done
+
+# pods.go:40] Couldn't allocate IPs: 10.129.0.4 for pod: (overlapping PodIPs)
+# addLogicalPort took 963.236483ms (very long addLogicalPort times)
+# setup retry failed; will try again later (something failed in addLogicalPort)
+
 
 
 num=1
