@@ -1,23 +1,53 @@
 #!/bin/bash
 
 num=1 
-echo -e "-ETCD----------------------------------------"
+echo -e "-------------------"
+echo -e "- ETCD ------------"
+echo -e "-------------------"
 echo ""
 for item in `oc get pod -n openshift-etcd --no-headers | awk '{print $1}'`
 do
     echo "[ETCD POD $num]"
     echo ""
-    echo "overloaded network: $(oc logs -n openshift-etcd $item |grep 'overload'|grep network|wc -l)"
-    echo "overloaded disk: $(oc logs -n openshift-etcd $item |grep 'overload'|grep disk|wc -l)"
-    echo "clock difference: $(oc logs -n openshift-etcd $item |grep 'clock difference'|wc -l)"
-    echo "clock-drift: $(oc logs -n openshift-etcd $item |grep 'clock-drift'|wc -l)"
-    echo "apply request took too long: $(oc logs -n openshift-etcd $item |grep 'apply request took too long'|wc -l)"
-    echo "database space exceeded: $(oc logs -n openshift-etcd $item |grep 'database space exceeded'|wc -l)"
-    echo "leader changed: $(oc logs -n openshift-etcd $item |grep 'leader changed'|wc -l)"    
-    echo ""
-    echo ""
+    OVERNET=$(oc logs -n openshift-etcd $item |grep 'overload'|grep network|wc -l)
+    OVERDISK=$(oc logs -n openshift-etcd $item |grep 'overload'|grep disk|wc -l)
+    CLOCKDIF=$(oc logs -n openshift-etcd $item |grep 'clock difference'|wc -l)
+    CLOCKDRIFT=$(oc logs -n openshift-etcd $item |grep 'clock-drift'|wc -l)
+    TOOKTOOLONG=$(oc logs -n openshift-etcd $item |grep 'apply request took too long'|wc -l)
+    DBSPACE=$(oc logs -n openshift-etcd $item |grep 'database space exceeded'|wc -l)
+    LEADERCHANGE=$(oc logs -n openshift-etcd $item |grep 'leader changed'|wc -l)
+
+    if (( $OVERNET != 0 )); then
+      echo "overloaded network: $OVERNET"
+      continue
+    fi
+    if (( $OVERDISK != 0 )); then
+      echo "overloaded disk: $OVERDISK"
+      continue
+    fi
+    if (( $CLOCKDIF != 0 )); then
+      echo "clock difference: $CLOCKDIF"
+      continue
+    fi
+    if (( $CLOCKDRIFT != 0 )); then
+      echo "clock-drift: $CLOCKDRIFT"
+      continue
+    fi
+    if (( $TOOKTOOLONG != 0 )); then
+      echo "apply request took too long: $TOOKTOOLONG"
+      continue
+    fi
+    if (( $DBSPACE != 0 )); then
+      echo "database space exceeded: $DBSPACE"
+      continue
+    fi
+    if (( $LEADERCHANGE != 0 )); then
+      echo "leader changed: $LEADERCHANGE"
+      continue
+    fi
     num=$(($num+1))
 done
+echo -e ""
 
 
 num=1
