@@ -1,11 +1,13 @@
 #!/bin/bash
 
 num=1 
+echo ""
+echo ""
 echo -e "-------------------"
 echo -e "- ETCD ------------"
 echo -e "-------------------"
 echo ""
-for item in `oc get pod -n openshift-etcd --no-headers | awk '{print $1}'`
+for item in `oc get pod -n openshift-etcd --no-headers |grep -v guard| grep -v revision|grep -v installer| awk '{print $1}'`
 do
     echo "[ETCD POD $num]"
     echo ""
@@ -51,6 +53,8 @@ echo -e ""
 
 
 num=1
+echo ""
+echo ""
 echo -e "-------------------"
 echo -e "- ROUTERS ---------"
 echo -e "-------------------"
@@ -102,6 +106,8 @@ do
 done
 
 num=1
+echo ""
+echo ""
 echo -e "-------------------"
 echo -e "- APISERVER -------"
 echo -e "-------------------"
@@ -149,6 +155,8 @@ done
 
 
 num=1
+echo ""
+echo ""
 echo -e "--------------------"
 echo -e "- Network Operator -"
 echo -e "--------------------"
@@ -157,36 +165,50 @@ for item in `oc get pod -n openshift-network-operator --no-headers|grep -i runni
 do
     echo "[Network Operator POD $num]"
     echo ""
-    echo "timed out: $(oc logs -n openshift-network-operator $item |grep 'timed out'|wc -l)"
     echo "context deadline exceeded: $(oc logs -n openshift-network-operator $item |grep 'deadline exceeded'|wc -l)"
-    echo "timeout: $(oc logs -n openshift-network-operator $item  |grep 'timeout'|wc -l)"
-    echo "process: $(oc logs -n openshift-network-operator $item  |grep 'process'|wc -l)"
-    echo "clock: $(oc logs -n openshift-network-operator $item  |grep 'clock'|wc -l)"    
-    echo "buffer: $(oc logs -n openshift-network-operator $item  |grep 'error adding container to network'|wc -l)"    
-    echo "buffer: $(oc logs -n openshift-network-operator $item  |grep 'error adding container to network'|wc -l)"   
+    echo "clock: $(oc logs -n openshift-network-operator $item  |grep 'clock skew'|wc -l)"    
+    echo "buffer: $(oc logs -n openshift-network-operator $item  |grep 'err: failed to apply'|wc -l)"   
     echo ""
     echo ""
     num=$(($num+1))
 done
+
 
 
 num=1
-echo -e "-------------------"
-echo -e "- OVN -------------"
-echo -e "-------------------"
 echo ""
-for item in `oc get pod -n openshift-ovn-kubernetes --no-headers|grep node|grep -i running | awk '{print $1}'`
+echo ""
+echo -e "-------------------------------------------"
+echo -e "- PodNetworkConnectivityCheck -------------"
+echo -e "-------------------------------------------"
+echo ""
+for item in `oc get podnetworkconnectivitycheck -n openshift-network-diagnostics --no-headers| awk '{print $1}'`
 do
-    echo "[OVN POD $num NORTHDB]"
-    echo ""
-    echo "Unreasonably long poll interval: $(oc logs -n openshift-ovn-kubernetes $item -c northd |grep 'Unreasonably long'|wc -l)"
-    echo "timeout at: $(oc logs -n openshift-ovn-kubernetes $item -c northd |grep 'timeout at'|wc -l)"    
-    echo "OVNNB/SB commit failed, force recompute next time: $(oc logs -n openshift-ovn-kubernetes $item -c northd |grep 'commit failed'|wc -l)"    
-    echo "no response to inactivity probe: $(oc logs -n openshift-ovn-kubernetes $item -c northd |grep 'no response to inactivity probe'|wc -l)"   
-    echo ""
-    echo ""
-    num=$(($num+1))
+  TCPERRORS=$(oc get podnetworkconnectivitycheck  $item -n openshift-network-diagnostics -o yaml|grep TCPConnectError)
+  echo -e "TCPErrors: $TCPERRORS"
+  num=$(($num+1))
 done
+
+
+# num=1
+# echo ""
+# echo ""
+# echo -e "-------------------"
+# echo -e "- OVN -------------"
+# echo -e "-------------------"
+# echo ""
+# for item in `oc get pod -n openshift-ovn-kubernetes --no-headers|grep node|grep -i running | awk '{print $1}'`
+# do
+#     echo "[OVN POD $num NORTHDB]"
+#     echo ""
+#     echo "Unreasonably long poll interval: $(oc logs -n openshift-ovn-kubernetes $item -c northd |grep 'Unreasonably long'|wc -l)"
+#     echo "timeout at: $(oc logs -n openshift-ovn-kubernetes $item -c northd |grep 'timeout at'|wc -l)"    
+#     echo "OVNNB/SB commit failed, force recompute next time: $(oc logs -n openshift-ovn-kubernetes $item -c northd |grep 'commit failed'|wc -l)"    
+#     echo "no response to inactivity probe: $(oc logs -n openshift-ovn-kubernetes $item -c northd |grep 'no response to inactivity probe'|wc -l)"   
+#     echo ""
+#     echo ""
+#     num=$(($num+1))
+# done
 
 # pods.go:40] Couldn't allocate IPs: 10.129.0.4 for pod: (overlapping PodIPs)
 # addLogicalPort took 963.236483ms (very long addLogicalPort times)
