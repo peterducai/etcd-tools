@@ -51,37 +51,97 @@ echo -e ""
 
 
 num=1
-echo -e "-Routers----------------------------------------"
+echo -e "-------------------"
+echo -e "- ROUTERS ---------"
+echo -e "-------------------"
 echo ""
 for item in `oc get pod -n openshift-ingress --no-headers | awk '{print $1}'`
 do
     echo "[ROUTER POD $num]"
     echo ""
-    echo "Unexpected watch close: $(oc logs -n openshift-ingress $item |grep 'Unexpected watch close'|wc -l)"    
-    echo "error on the server: $(oc logs -n openshift-ingress $item |grep 'error on the server'|wc -l)"    
-    echo "context deadline exceeded: $(oc logs -n openshift-ingress $item |grep 'context deadline exceeded'|wc -l)"    
-    echo "timeout: $(oc logs -n openshift-ingress $item |grep 'timeout'|wc -l)"    
-    echo "process: $(oc logs -n openshift-ingress $item |grep 'process'|wc -l)"    
-    echo "clock: $(oc logs -n openshift-ingress $item |grep 'clock'|wc -l)"    
-    echo "buffer: $(oc logs -n openshift-ingress $item |grep 'buffer'|wc -l)"    
+    RWATCHCLOSE=$(oc logs -n openshift-ingress $item |grep 'Unexpected watch close'|wc -l)
+    RERRSERVER=$(oc logs -n openshift-ingress $item |grep 'error on the server'|wc -l)
+    RCTXDEADLINE=$(oc logs -n openshift-ingress $item |grep 'context deadline exceeded'|wc -l)
+    RTIMEOUT=$(oc logs -n openshift-ingress $item |grep 'timeout'|wc -l)
+    RPROC=$(oc logs -n openshift-ingress $item |grep 'process'|wc -l)
+    RCLOCK=$(oc logs -n openshift-ingress $item |grep 'clock'|wc -l)
+    RBUFFER=$(oc logs -n openshift-ingress $item |grep 'buffer'|wc -l)
+
+    if (( $RWATCHCLOSE != 0 )); then
+      echo "Unexpected watch close: $RWATCHCLOSE"
+      continue
+    fi
+    if (( $RERRSERVER != 0 )); then
+      echo "error on the server: $RERRSERVER"
+      continue
+    fi
+    if (( $RCTXDEADLINE != 0 )); then
+      echo "context deadline exceeded: $RCTXDEADLINE"
+      continue
+    fi
+    if (( $RTIMEOUT != 0 )); then
+      echo "timeout: $RTIMEOUT"
+      continue
+    fi
+    if (( $RPROC != 0 )); then
+      echo "process: $RPROC"
+      continue
+    fi
+    if (( $RCLOCK != 0 )); then
+      echo "clock: $RCLOCK"
+      continue
+    fi
+    if (( $RBUFFER != 0 )); then
+      echo "buffer: $RBUFFER"
+      continue
+    fi
+    
     echo ""
     echo ""
     num=$(($num+1))
 done
 
 num=1
-echo -e "-Apiserver----------------------------------------"
+echo -e "-------------------"
+echo -e "- APISERVER -------"
+echo -e "-------------------"
 echo ""
 for item in `oc get pod -n openshift-kube-apiserver --no-headers|grep -i running | awk '{print $1}'`
 do
     echo "[APISERVER POD $num]"
     echo ""
-    echo "timed out: $(oc logs -n openshift-kube-apiserver $item |grep 'timed out'|wc -l)"
-    echo "context deadline exceeded: $(oc logs -n openshift-kube-apiserver $item |grep 'deadline exceeded'|wc -l)"
-    echo "timeout: $(oc logs -n openshift-kube-apiserver $item  |grep 'timeout'|wc -l)"
-    echo "process: $(oc logs -n openshift-kube-apiserver $item  |grep 'process'|wc -l)"
-    echo "clock: $(oc logs -n openshift-kube-apiserver $item  |grep 'clock'|wc -l)"    
-    echo "buffer: $(oc logs -n openshift-kube-apiserver $item  |grep 'buffer'|wc -l)"    
+    TIMED=$(oc logs -n openshift-kube-apiserver $item |grep 'timed out'|wc -l)
+    CTXDEAD=$(oc logs -n openshift-kube-apiserver $item |grep 'deadline exceeded'|wc -l)
+    TIM=$(oc logs -n openshift-kube-apiserver $item  |grep 'timeout'|wc -l)
+    PROCS=$(oc logs -n openshift-kube-apiserver $item  |grep 'process'|wc -l)
+    CLK=$(oc logs -n openshift-kube-apiserver $item  |grep 'clock'|wc -l)
+    BFFR=$(oc logs -n openshift-kube-apiserver $item  |grep 'buffer'|wc -l)
+
+    if (( $TIMED != 0 )); then
+      echo "Timed out: $TIMED"
+      continue
+    fi
+    if (( $CTXDEAD != 0 )); then
+      echo "deadline exceeded: $CTXDEAD"
+      continue
+    fi
+    if (( $TIM != 0 )); then
+      echo "timeout: $TIM"
+      continue
+    fi
+    if (( $PROCS != 0 )); then
+      echo "process: $PROCS"
+      continue
+    fi
+    if (( $CLK != 0 )); then
+      echo "clock: $CLK"
+      continue
+    fi
+    if (( $BFFR != 0 )); then
+      echo "buffer: $BFFR"
+      continue
+    fi
+
     echo ""
     echo ""
     num=$(($num+1))
@@ -89,7 +149,9 @@ done
 
 
 num=1
-echo -e "-Network operator----------------------------------------"
+echo -e "--------------------"
+echo -e "- Network Operator -"
+echo -e "--------------------"
 echo ""
 for item in `oc get pod -n openshift-network-operator --no-headers|grep -i running | awk '{print $1}'`
 do
@@ -109,7 +171,9 @@ done
 
 
 num=1
-echo -e "-OVN----------------------------------------"
+echo -e "-------------------"
+echo -e "- OVN -------------"
+echo -e "-------------------"
 echo ""
 for item in `oc get pod -n openshift-ovn-kubernetes --no-headers|grep node|grep -i running | awk '{print $1}'`
 do
@@ -131,7 +195,9 @@ done
 
 
 num=1
-echo -e "-Machine Configs----------------------------------------"
+echo -e "-------------------"
+echo -e "- MachineConfig ---"
+echo -e "-------------------"
 echo ""
 for node in $(oc get nodes -o name | awk -F'/' '{ print $2 }')
 do
