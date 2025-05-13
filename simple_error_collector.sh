@@ -10,6 +10,7 @@ echo ""
 for item in `oc get pod -n openshift-etcd --no-headers |grep -v guard| grep -v revision|grep -v installer| awk '{print $1}'`
 do
     echo "[ETCD POD $num]"
+    num=$(($num+1))
     echo ""
     OVERNET=$(oc logs -n openshift-etcd $item |grep 'overload'|grep network|wc -l)
     OVERDISK=$(oc logs -n openshift-etcd $item |grep 'overload'|grep disk|wc -l)
@@ -21,33 +22,26 @@ do
 
     if (( $OVERNET != 0 )); then
       echo "overloaded network: $OVERNET"
-      continue
     fi
     if (( $OVERDISK != 0 )); then
       echo "overloaded disk: $OVERDISK"
-      continue
     fi
     if (( $CLOCKDIF != 0 )); then
       echo "clock difference: $CLOCKDIF"
-      continue
     fi
     if (( $CLOCKDRIFT != 0 )); then
       echo "clock-drift: $CLOCKDRIFT"
-      continue
     fi
     if (( $TOOKTOOLONG != 0 )); then
       echo "apply request took too long: $TOOKTOOLONG"
-      continue
     fi
     if (( $DBSPACE != 0 )); then
       echo "database space exceeded: $DBSPACE"
-      continue
     fi
     if (( $LEADERCHANGE != 0 )); then
       echo "leader changed: $LEADERCHANGE"
-      continue
     fi
-    num=$(($num+1))
+    echo -e ""
 done
 echo -e ""
 
@@ -73,31 +67,24 @@ do
 
     if (( $RWATCHCLOSE != 0 )); then
       echo "Unexpected watch close: $RWATCHCLOSE"
-      continue
     fi
     if (( $RERRSERVER != 0 )); then
       echo "error on the server: $RERRSERVER"
-      continue
     fi
     if (( $RCTXDEADLINE != 0 )); then
       echo "context deadline exceeded: $RCTXDEADLINE"
-      continue
     fi
     if (( $RTIMEOUT != 0 )); then
       echo "timeout: $RTIMEOUT"
-      continue
     fi
     if (( $RPROC != 0 )); then
       echo "process: $RPROC"
-      continue
     fi
     if (( $RCLOCK != 0 )); then
       echo "clock: $RCLOCK"
-      continue
     fi
     if (( $RBUFFER != 0 )); then
       echo "buffer: $RBUFFER"
-      continue
     fi
     
     echo ""
@@ -125,27 +112,21 @@ do
 
     if (( $TIMED != 0 )); then
       echo "Timed out: $TIMED"
-      continue
     fi
     if (( $CTXDEAD != 0 )); then
       echo "deadline exceeded: $CTXDEAD"
-      continue
     fi
     if (( $TIM != 0 )); then
       echo "timeout: $TIM"
-      continue
     fi
     if (( $PROCS != 0 )); then
       echo "process: $PROCS"
-      continue
     fi
     if (( $CLK != 0 )); then
       echo "clock: $CLK"
-      continue
     fi
     if (( $BFFR != 0 )); then
       echo "buffer: $BFFR"
-      continue
     fi
 
     echo ""
@@ -184,10 +165,31 @@ echo -e "-------------------------------------------"
 echo ""
 for item in `oc get podnetworkconnectivitycheck -n openshift-network-diagnostics --no-headers| awk '{print $1}'`
 do
-  TCPERRORS=$(oc get podnetworkconnectivitycheck  $item -n openshift-network-diagnostics -o yaml|grep TCPConnectError)
-  echo -e "TCPErrors: $TCPERRORS"
+  TCPERRORS=$(oc get podnetworkconnectivitycheck  $item -n openshift-network-diagnostics -o yaml|grep -c TCPConnectError)
+  echo -e "$item: $TCPERRORS"
   num=$(($num+1))
 done
+
+
+
+# to-kubernetes-apiserver-endpoint
+# to-kubernetes-apiserver-endpoint
+# to-kubernetes-apiserver-endpoint
+# to-kubernetes-apiserver-service-cluster
+# to-kubernetes-default-service-cluster
+# to-load-balancer-api-external
+# to-load-balancer-api-internal
+# to-network-check-target-service-cluster
+# to-network-check-target-sharedocp418-7z9qp-master-0
+# to-network-check-target-sharedocp418-7z9qp-master-1
+# to-network-check-target-sharedocp418-7z9qp-master-2
+# to-network-check-target-sharedocp418-7z9qp-worker-0-28xxw
+# to-network-check-target-sharedocp418-7z9qp-worker-0-6cvqp
+# to-openshift-apiserver-endpoint-sharedocp418-7z9qp-master-0
+# to-openshift-apiserver-endpoint-sharedocp418-7z9qp-master-1
+# to-openshift-apiserver-endpoint-sharedocp418-7z9qp-master-2
+# to-openshift-apiserver-service-cluster
+
 
 
 # num=1
