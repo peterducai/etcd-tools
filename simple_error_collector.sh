@@ -27,33 +27,33 @@ do
 
 
   if [[ $item == *"to-kubernetes-apiserver-endpoint"* ]]; then
-  echo "to-kubernetes-apiserver-endpoint: $TCPERRORS"
+    echo "to-kubernetes-apiserver-endpoint-NODE: $TCPERRORS"
   fi
   if [[ $item == *"to-kubernetes-apiserver-service-cluster"* ]]; then
-  echo "to-kubernetes-apiserver-service-cluster: $TCPERRORS"
+    echo "to-kubernetes-apiserver-service-cluster-NODE: $TCPERRORS"
   fi
   if [[ $item == *"to-kubernetes-default-service-cluster"* ]]; then
-  echo "to-kubernetes-default-service-cluster: $TCPERRORS"
+    echo "to-kubernetes-default-service-cluster-NODEum: $TCPERRORS"
   fi
   if [[ $item == *"to-load-balancer-api-external"* ]]; then
-  echo "to-load-balancer-api-external: $TCPERRORS"
+    echo "to-load-balancer-api-external-NODE: $TCPERRORS"
   fi
   if [[ $item == *"to-load-balancer-api-internal"* ]]; then
-  echo "to-load-balancer-api-internal: $TCPERRORS"
+    echo "to-load-balancer-api-internal-NODE: $TCPERRORS"
   fi
   if [[ $item == *"to-network-check-target-service-cluster"* ]]; then
-  echo "to-network-check-target-service-cluster: $TCPERRORS"
+    echo "to-network-check-target-service-cluster-NODE: $TCPERRORS"
   fi
   if [[ $item == *"to-network-check-target-"* ]]; then
     if [[ $item != *"service-cluster"* ]]; then
-      echo "to-network-check-target-: $TCPERRORS"
+      echo "to-network-check-target--NODE: $TCPERRORS"
     fi  
   fi
   if [[ $item == *"to-openshift-apiserver-endpoint"* ]]; then
-  echo "to-openshift-apiserver-endpoint: $TCPERRORS"
+    echo "to-openshift-apiserver-endpoint-NODE: $TCPERRORS"
   fi
   if [[ $item == *"to-openshift-apiserver-service-cluster"* ]]; then
-  echo "to-openshift-apiserver-service-cluster: $TCPERRORS"
+    echo "to-openshift-apiserver-service-cluster-NODE: $TCPERRORS"
   fi
 
   # to-kubernetes-apiserver-endpoint
