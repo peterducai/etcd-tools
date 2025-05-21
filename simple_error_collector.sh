@@ -1,5 +1,13 @@
 #!/bin/bash
 
+
+
+echo -e "NODES:"
+echo -e ""
+echo -e "masters: $(oc get node|grep -c master)"
+echo -e "infra: $(oc get node|grep -c infra)"
+echo -e "worker: $(oc get node|grep -c worker)"
+
 num=1 
 echo ""
 echo ""
@@ -99,6 +107,8 @@ echo -e "-------------------"
 echo -e "- APISERVER -------"
 echo -e "-------------------"
 echo ""
+
+
 for item in `oc get pod -n openshift-kube-apiserver --no-headers|grep -i running | awk '{print $1}'`
 do
     echo "[APISERVER POD $num]"
@@ -144,11 +154,25 @@ echo -e "--------------------"
 echo ""
 for item in `oc get pod -n openshift-network-operator --no-headers|grep -i running | awk '{print $1}'`
 do
+    CONTXT=$(oc logs -n openshift-network-operator $item |grep 'deadline exceeded'|wc -l)
+    CLOCK=$(oc logs -n openshift-network-operator $item  |grep 'clock skew'|wc -l)
+    FAILAPP=$(oc logs -n openshift-network-operator $item  |grep 'err: failed to apply'|wc -l)
+
     echo "[Network Operator POD $num]"
     echo ""
-    echo "context deadline exceeded: $(oc logs -n openshift-network-operator $item |grep 'deadline exceeded'|wc -l)"
-    echo "clock: $(oc logs -n openshift-network-operator $item  |grep 'clock skew'|wc -l)"    
-    echo "buffer: $(oc logs -n openshift-network-operator $item  |grep 'err: failed to apply'|wc -l)"   
+    if (( $CONTXT != 0 )); then
+      echo "context deadline exceeded: $CONTXT"
+    fi
+    if (( $CLOCK != 0 )); then
+      echo "clock skew: $CLOCK"
+    fi
+    if (( $FAILAPP != 0 )); then
+      echo "failed to apply: $FAILAPP"
+    fi
+    
+    # echo "context deadline exceeded: $(oc logs -n openshift-network-operator $item |grep 'deadline exceeded'|wc -l)"
+    # echo "clock: $(oc logs -n openshift-network-operator $item  |grep 'clock skew'|wc -l)"    
+    # echo "buffer: $(oc logs -n openshift-network-operator $item  |grep 'err: failed to apply'|wc -l)"   
     echo ""
     echo ""
     num=$(($num+1))
@@ -161,33 +185,27 @@ echo ""
 echo ""
 echo -e "-------------------------------------------"
 echo -e "- PodNetworkConnectivityCheck -------------"
+echo -e "- oc get podnetworkconnectivitycheck -n openshift-network-diagnostics --no-headers -"
 echo -e "-------------------------------------------"
 echo ""
 for item in `oc get podnetworkconnectivitycheck -n openshift-network-diagnostics --no-headers| awk '{print $1}'`
 do
   TCPERRORS=$(oc get podnetworkconnectivitycheck  $item -n openshift-network-diagnostics -o yaml|grep -c TCPConnectError)
   echo -e "$item: $TCPERRORS"
+  # [ -n "${STRING}" ] && echo ${STRING}
   num=$(($num+1))
 done
 
 
 
 # to-kubernetes-apiserver-endpoint
-# to-kubernetes-apiserver-endpoint
-# to-kubernetes-apiserver-endpoint
 # to-kubernetes-apiserver-service-cluster
 # to-kubernetes-default-service-cluster
 # to-load-balancer-api-external
 # to-load-balancer-api-internal
 # to-network-check-target-service-cluster
-# to-network-check-target-sharedocp418-7z9qp-master-0
-# to-network-check-target-sharedocp418-7z9qp-master-1
-# to-network-check-target-sharedocp418-7z9qp-master-2
-# to-network-check-target-sharedocp418-7z9qp-worker-0-28xxw
-# to-network-check-target-sharedocp418-7z9qp-worker-0-6cvqp
-# to-openshift-apiserver-endpoint-sharedocp418-7z9qp-master-0
-# to-openshift-apiserver-endpoint-sharedocp418-7z9qp-master-1
-# to-openshift-apiserver-endpoint-sharedocp418-7z9qp-master-2
+# to-network-check-target-  |grep -v service-cluster
+# to-openshift-apiserver-endpoint
 # to-openshift-apiserver-service-cluster
 
 
