@@ -7,6 +7,68 @@ echo -e ""
 echo -e "masters: $(oc get node|grep -c master)"
 echo -e "infra: $(oc get node|grep -c infra)"
 echo -e "worker: $(oc get node|grep -c worker)"
+echo -e ""
+echo -e ""
+
+
+num=1
+echo ""
+echo ""
+echo -e "-------------------------------------------"
+echo -e "- PodNetworkConnectivityCheck -------------"
+echo -e "- oc get podnetworkconnectivitycheck -n openshift-network-diagnostics --no-headers -"
+echo -e "-------------------------------------------"
+echo ""
+for item in `oc get podnetworkconnectivitycheck -n openshift-network-diagnostics --no-headers| awk '{print $1}'`
+do
+  TCPERRORS=$(oc get podnetworkconnectivitycheck  $item -n openshift-network-diagnostics -o yaml|grep -c TCPConnectError)
+  #echo -e "$item: $TCPERRORS"
+  # [ -n "${STRING}" ] && echo ${STRING}
+
+
+  if [[ $item == *"to-kubernetes-apiserver-endpoint"* ]]; then
+  echo "to-kubernetes-apiserver-endpoint: $TCPERRORS"
+  fi
+  if [[ $item == *"to-kubernetes-apiserver-service-cluster"* ]]; then
+  echo "to-kubernetes-apiserver-service-cluster: $TCPERRORS"
+  fi
+  if [[ $item == *"to-kubernetes-default-service-cluster"* ]]; then
+  echo "to-kubernetes-default-service-cluster: $TCPERRORS"
+  fi
+  if [[ $item == *"to-load-balancer-api-external"* ]]; then
+  echo "to-load-balancer-api-external: $TCPERRORS"
+  fi
+  if [[ $item == *"to-load-balancer-api-internal"* ]]; then
+  echo "to-load-balancer-api-internal: $TCPERRORS"
+  fi
+  if [[ $item == *"to-network-check-target-service-cluster"* ]]; then
+  echo "to-network-check-target-service-cluster: $TCPERRORS"
+  fi
+  if [[ $item == *"to-network-check-target-"* ]]; then
+    if [[ $item != *"service-cluster"* ]]; then
+      echo "to-network-check-target-: $TCPERRORS"
+    fi  
+  fi
+  if [[ $item == *"to-openshift-apiserver-endpoint"* ]]; then
+  echo "to-openshift-apiserver-endpoint: $TCPERRORS"
+  fi
+  if [[ $item == *"to-openshift-apiserver-service-cluster"* ]]; then
+  echo "to-openshift-apiserver-service-cluster: $TCPERRORS"
+  fi
+
+  # to-kubernetes-apiserver-endpoint
+# to-kubernetes-apiserver-service-cluster
+# to-kubernetes-default-service-cluster
+# to-load-balancer-api-external
+# to-load-balancer-api-internal
+# to-network-check-target-service-cluster
+# to-network-check-target-  |grep -v service-cluster
+# to-openshift-apiserver-endpoint
+# to-openshift-apiserver-service-cluster
+
+  num=$(($num+1))
+done
+
 
 num=1 
 echo ""
@@ -180,33 +242,11 @@ done
 
 
 
-num=1
-echo ""
-echo ""
-echo -e "-------------------------------------------"
-echo -e "- PodNetworkConnectivityCheck -------------"
-echo -e "- oc get podnetworkconnectivitycheck -n openshift-network-diagnostics --no-headers -"
-echo -e "-------------------------------------------"
-echo ""
-for item in `oc get podnetworkconnectivitycheck -n openshift-network-diagnostics --no-headers| awk '{print $1}'`
-do
-  TCPERRORS=$(oc get podnetworkconnectivitycheck  $item -n openshift-network-diagnostics -o yaml|grep -c TCPConnectError)
-  echo -e "$item: $TCPERRORS"
-  # [ -n "${STRING}" ] && echo ${STRING}
-  num=$(($num+1))
-done
 
 
 
-# to-kubernetes-apiserver-endpoint
-# to-kubernetes-apiserver-service-cluster
-# to-kubernetes-default-service-cluster
-# to-load-balancer-api-external
-# to-load-balancer-api-internal
-# to-network-check-target-service-cluster
-# to-network-check-target-  |grep -v service-cluster
-# to-openshift-apiserver-endpoint
-# to-openshift-apiserver-service-cluster
+
+
 
 
 
