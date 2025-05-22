@@ -14,10 +14,10 @@ echo -e ""
 num=1
 echo ""
 echo ""
-echo -e "-------------------------------------------"
-echo -e "- PodNetworkConnectivityCheck -------------"
+echo -e "-----------------------------------------------------"
+echo -e "- PodNetworkConnectivityCheck TCPERRORS -------------"
 echo -e "- oc get podnetworkconnectivitycheck -n openshift-network-diagnostics --no-headers -"
-echo -e "-------------------------------------------"
+echo -e "-----------------------------------------------------"
 echo ""
 for item in `oc get podnetworkconnectivitycheck -n openshift-network-diagnostics --no-headers| awk '{print $1}'`
 do
