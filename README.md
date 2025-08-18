@@ -58,7 +58,9 @@ $ oc debug node/<master_node>
 
 ## secure_collector.sh
 
-> ./secure_collector.sh <path to Must-gather or folder with logs>
+```
+./secure_collector.sh <path to Must-gather or folder with logs>
+```
 
 will print number of errors (from list of errors) in all files.
 
