@@ -56,6 +56,11 @@ $ oc debug node/<master_node>
   podman run --privileged --volume /var/lib/etcd:/test quay.io/peterducai/openshift-etcd-suite:latest fio
 ```
 
+## secure_collector.sh
+
+> ./secure_collector.sh <path to Must-gather or folder with logs>
+
+will print number of errors (from list of errors) in all files.
 
 <!-- 
 > FOLLOWING TEXT IS OUTDATED AND NEED FIXES

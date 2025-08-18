@@ -257,7 +257,7 @@ AUDIT_LOGS=$(oc adm node-logs --role=master --path=openshift-apiserver|grep audi
 node=""
 for i in $AUDIT_LOGS; do
   echo -e "[ processing $i ]"
-  if [[ $i == *".log"* ]]; then
+  if [[ $i == *".log" ]]; then
     oc adm node-logs $node --path=openshift-apiserver/$i > $OUTPUT_PATH/$(echo $i|cut -d ' ' -f2)
     cat $OUTPUT_PATH/$(echo $i|cut -d ' ' -f2) |jq '.user.username' -r > $OUTPUT_PATH/$(echo $i|cut -d ' ' -f2).username
     sort $OUTPUT_PATH/$(echo $i|cut -d ' ' -f2).username | uniq -c | sort -bgr |head -5
