@@ -32,6 +32,12 @@ WARNINGS=(
     'failed to download'
     'failed to retrieve a role for a rolebinding'
     'Failed to find app'
+    'CNI request failed with status'
+    'Housekeeping took longer than expected'
+    'due to excessive rate'
+    'iptables ChainExists'
+    'KubeletNotReady'
+    'Node became not ready'
 )
 
 cd $1
