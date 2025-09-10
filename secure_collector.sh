@@ -29,6 +29,7 @@ WARNINGS=(
     'Couldn't allocate IPs'
     'setup retry failed'
     'no response to inactivity probe after'
+    'ErrorAddingLogicalPort'
     #'failed'
     'could not get link modes: netlink receive: operation not supported'
     'tls: failed to verify certificate'
