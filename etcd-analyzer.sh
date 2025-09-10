@@ -185,6 +185,7 @@ analyze_members() {
 }
 
 
+oc get infrastructure cluster -o jsonpath='{.status.platform}'
 
 apiserver_check
 etcd_lat

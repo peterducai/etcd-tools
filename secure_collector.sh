@@ -14,6 +14,7 @@ WARNINGS=(
     'Clock not synchronising'
     'clock skew'
     'process'
+    'defunct'
     'Pod in terminal state (e.g. completed) will be ignored as it has already been processed'
     'in terminal state (e.g. completed) during update event: will remove it'
     'dropped internal Raft message since sending buffer is full (overloaded network)'
@@ -22,6 +23,12 @@ WARNINGS=(
     'context deadline exceeded'
     'error on the server'
     'timeout'
+    'Unreasonably long'
+    'ADD finished CNI request: err'
+    'CNI request failed with'
+    'Couldn't allocate IPs'
+    'setup retry failed'
+    'no response to inactivity probe after'
     #'failed'
     'could not get link modes: netlink receive: operation not supported'
     'tls: failed to verify certificate'
@@ -38,6 +45,8 @@ WARNINGS=(
     'iptables ChainExists'
     'KubeletNotReady'
     'Node became not ready'
+    'client connection lost'
+    'error adding container to network'
 )
 
 cd $1
