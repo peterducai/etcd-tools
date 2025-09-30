@@ -48,6 +48,8 @@ WARNINGS=(
     'Node became not ready'
     'client connection lost'
     'error adding container to network'
+    'ProxyConfigControllerDegraded'
+    'route not yet available'
 )
 
 cd $1
