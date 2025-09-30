@@ -18,7 +18,6 @@ WARNINGS=(
     'Pod in terminal state (e.g. completed) will be ignored as it has already been processed'
     'in terminal state (e.g. completed) during update event: will remove it'
     'dropped internal Raft message since sending buffer is full (overloaded network)'
-    # 'buffer'
     'unexpected watch close'
     'context deadline exceeded'
     'error on the server'
@@ -26,11 +25,10 @@ WARNINGS=(
     'Unreasonably long'
     'ADD finished CNI request: err'
     'CNI request failed with'
-    'Couldn't allocate IPs'
+    't allocate IPs'
     'setup retry failed'
     'no response to inactivity probe after'
     'ErrorAddingLogicalPort'
-    #'failed'
     'could not get link modes: netlink receive: operation not supported'
     'tls: failed to verify certificate'
     'failed to list'
@@ -53,6 +51,19 @@ WARNINGS=(
 )
 
 cd $1
+
+for str in "${WARNINGS[@]}"; do
+  FILEARR=()
+  echo -e ""
+  echo -e "[$str] -----------------"
+  echo -e ""
+  ALLFILES=$(tree -fi|grep ".log$"| cut -c 2-)
+  for i in "${ALLFILES[@]}"
+  do
+    grep -cinR "$str" | grep -v ':0$'| sort -t':' -n -k2 | tac|head -10
+  done
+  echo -e ""  
+done
 
 # ALLFILES=$(tree -fi|grep ".log$"| cut -c 2-)
 # for i in "${ALLFILES[@]}"; do

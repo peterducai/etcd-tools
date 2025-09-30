@@ -1,5 +1,0 @@
-DATA/etcd-mt1-nonprod-5vd8n-master-2.log
-DATA/router-default-577775957c-nxhk4.log
-DATA/router-plng-stg-dmz-7ff97b7f66-vfhfh.log
-DATA/kube-apiserver-mt1-nonprod-5vd8n-master-2.log
-DATA/etcd-mt1-nonprod-5vd8n-master-1.log
