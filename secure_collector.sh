@@ -4,6 +4,8 @@
 # >  ./secure_collector.sh <path to folder>
 
 WARNINGS=(
+    'oom-kill'
+    'cgroup out of memory'
     'apply request took too long'
     'Failed calling webhook'
     'denied the request'
@@ -13,6 +15,7 @@ WARNINGS=(
     'clock difference'
     'Clock not synchronising'
     'clock skew'
+    'Evicted'
     'process'
     'defunct'
     'Pod in terminal state (e.g. completed) will be ignored as it has already been processed'
