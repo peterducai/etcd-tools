@@ -129,8 +129,8 @@ overload_test() {
 
 leaderchanged_test_tooktoolong() {
   $CLIENT logs $i -c etcd -n $ETCDNS|grep 'leader changed' > $OUTPUT_PATH/leaderchanged.txt
-  LAST=$(cat $OUTPUT_PATH/leaderchanged.txt|tail -1cut -d ':' -f3|cut -c 2-11)
-  LOGEND=$(cat $OUTPUT_PATH/leaderchanged.txt|tail -1cut -d ':' -f3|cut -c 2-11)
+  LAST=$(cat $OUTPUT_PATH/leaderchanged.txt|tail -1 | cut -d ':' -f3|cut -c 2-11)
+  LOGEND=$(cat $OUTPUT_PATH/leaderchanged.txt|tail -1 | cut -d ':' -f3|cut -c 2-11)
   
   echo -e "Found $(cat $OUTPUT_PATH/leaderchanged.txt|wc -l) took too long due to leader changed messages.. last seen on $LOGEND"
 }
