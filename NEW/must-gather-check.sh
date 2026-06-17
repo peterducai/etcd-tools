@@ -85,9 +85,39 @@ list_monitoring () {
     echo ""
 }
 
+
+network_check_routers () {
+    echo -e "${GREEN}- Network Check: Routers --------${NONE}"
+    echo ""
+    cd $FULL_PATH/namespaces/openshift-ingress/pods
+    for router in $(ls -d */); do
+        echo -e "- ${GREEN}$router${NONE}"
+        echo "" > $router.log
+        WATCH=$(cat $router/router/router/logs/current.log |grep 'Unexpected watch close'|wc -l)
+        RERR=$(cat $router/router/router/logs/current.log |grep 'error on the server'|wc -l)
+        DEAD=$(cat $router/router/router/logs/current.log |grep 'context deadline exceeded'|wc -l)
+        CLTIME=$(cat $router/router/router/logs/current.log |grep 'timeout'|wc -l)
+        
+        PRC=$(cat $router/router/router/logs/current.log |grep 'process'|wc -l)
+        CLK=$(cat $router/router/router/logs/current.log |grep 'clock'|wc -l)
+        BFR=$(cat $router/router/router/logs/current.log |grep 'buffer'|wc -l)
+        
+        echo -e "" > $router.log
+        echo "Unexpected watch close $WATCH"
+        echo "error on the server $RERR"
+        echo "context deadline exceeded $DEAD"
+        echo "timeout $CLTIME"
+        echo "process $PRC"
+        echo "clock $CLK"
+        echo "buffer $BFR"
+    done
+    echo ""
+}
+
 change_to_must_gather_dir
 list_version
 list_nodes
 network_cluster_scale
 etcd_object_count
 list_monitoring
+network_check_routers
