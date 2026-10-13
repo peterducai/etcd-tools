@@ -142,6 +142,21 @@ etcd_check_errors() {
       SPACE=$(cat $member/etcd/etcd/logs/current.log|grep 'database space exceeded'|wc -l)
       LEADER=$(cat $member/etcd/etcd/logs/current.log|grep 'leader changed'|wc -l)
     done
+
+    echo "OVERLOADED: $OVERLOAD"
+    echo "OVERLOAD NETWORK: $OVERLOADN"
+    echo "OVERLOAD NETWORK remote-peer-active\":false: $RAPOVERN"
+    echo "OVERLOADED DISK: $OVERLOADC"
+    echo "LAST: $LAST"
+    echo "LOGEND: $LOGEND"
+    echo "CLOCK: $CLOCK"
+    echo "LASTNTP: $LASTNTP"
+    echo "LONGDRIFT: $LONGDRIFT"
+    echo "LASTLONGDRIFT: $LASTLONGDRIFT"
+    echo "TOOK: $TOOK"
+    echo "HEART: $HEART"
+    echo "SPACE: $SPACE"
+    echo "LEADER: $LEADER"
 }
 
 change_to_must_gather_dir
