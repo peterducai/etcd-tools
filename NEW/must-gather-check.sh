@@ -141,21 +141,21 @@ etcd_check_errors() {
       HEART=$(cat $member/etcd/etcd/logs/current.log|grep 'failed to send out heartbeat on time'|wc -l)
       SPACE=$(cat $member/etcd/etcd/logs/current.log|grep 'database space exceeded'|wc -l)
       LEADER=$(cat $member/etcd/etcd/logs/current.log|grep 'leader changed'|wc -l)
-    done
 
-    echo "OVERLOADED: $OVERLOAD"
-    echo "OVERLOAD NETWORK: $OVERLOADN"
-    echo "OVERLOAD NETWORK remote-peer-active: $RAPOVERN"
-    echo "OVERLOADED DISK: $OVERLOADC"
-    echo "LOG END: $LOGEND"
-    echo "CLOCK DIFFERENCE: $CLOCK"
-    echo "LAST CLOCK DIFFERENCE: $LASTNTP"
-    echo "CLOCK DRIFT: $LONGDRIFT"
-    echo "LASTLONGDRIFT: $LASTLONGDRIFT"
-    echo "TOOK TOO LONG: $TOOK"
-    echo "HEARTBEAT: $HEART"
-    echo "SPACE FULL: $SPACE"
-    echo "LEADER CHANGED: $LEADER"
+      echo "OVERLOADED: $OVERLOAD"
+      echo "OVERLOAD NETWORK: $OVERLOADN"
+      echo "OVERLOAD NETWORK remote-peer-active: $RAPOVERN"
+      echo "OVERLOADED DISK: $OVERLOADC"
+      echo "LOG END: $LOGEND"
+      echo "CLOCK DIFFERENCE: $CLOCK"
+      echo "LAST CLOCK DIFFERENCE: $LASTNTP"
+      echo "CLOCK DRIFT: $LONGDRIFT"
+      echo "LASTLONGDRIFT: $LASTLONGDRIFT"
+      echo "TOOK TOO LONG: $TOOK"
+      echo "HEARTBEAT: $HEART"
+      echo "SPACE FULL: $SPACE"
+      echo "LEADER CHANGED: $LEADER"
+    done
 }
 
 change_to_must_gather_dir
