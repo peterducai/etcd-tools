@@ -110,6 +110,7 @@ network_check_routers () {
         echo "process $PRC"
         echo "clock $CLK"
         echo "buffer $BFR"
+        echo ""
     done
     echo ""
 }

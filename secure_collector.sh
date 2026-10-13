@@ -4,6 +4,8 @@
 # >  ./secure_collector.sh <path to folder>
 
 WARNINGS=(
+    'f4376cb0855eeb786d'
+    '227f4bc892c2'
     'oom-kill'
     'cgroup out of memory'
     'apply request took too long'
