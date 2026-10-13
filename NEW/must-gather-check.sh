@@ -151,5 +151,4 @@ network_cluster_scale
 etcd_object_count
 list_monitoring
 network_check_routers
-change_to_must_gather_dir
 etcd_check_errors
