@@ -19,7 +19,7 @@ change_to_must_gather_dir () {
     cd $MG_PATH
     cd $(ls -d quay* )
     FULL_PATH=$(pwd)
-    echo ""
+    echo "FULL PATH: $FULL_PATH"
 }
 
 list_version () {
