@@ -115,6 +115,40 @@ network_check_routers () {
     echo ""
 }
 
+etcd_check_errors() {
+    change_to_must_gather_dir
+    
+    echo -e ""
+    echo -e "${GREEN}- ETCD --------------------${NONE}"
+    echo -e ""
+    cd namespaces/openshift-etcd/pods
+    for dirs in $(ls |grep -v guard|grep -v installer|grep -v quorum|grep -v pruner); do
+        [ -e "$dirs" ] || continue
+        [ ! -z "$(ls |grep -v guard|grep -v installer|grep -v quorum|grep -v pruner)" ] && ETCD+=("${dirs}") || true
+        #echo -e "adding $dirs"
+    done
+
+    # echo -e "${#ETCD[@]} etcd members"
+    for member in "${ETCD[@]}"; do
+      echo -e "\n${GREEN}-[$member] ---${NONE}\n"
+      # echo -e ""
+      OVERLOAD=$(cat $member/etcd/etcd/logs/current.log|grep 'overload'|wc -l)
+      OVERLOADN=$(cat $member/etcd/etcd/logs/current.log|grep 'overload'|grep network|wc -l)
+      RAPOVERN=$(cat $member/etcd/etcd/logs/current.log|grep 'overload'|grep network |tail -n 1 |grep "remote-peer-active\":false")
+      OVERLOADC=$(cat $member/etcd/etcd/logs/current.log|grep 'overload'|grep disk|wc -l)
+      LAST=$(cat $member/etcd/etcd/logs/current.log|grep 'overload'|tail -1 |cut -d ':' -f1|cut -c 1-10)
+      LOGEND=$(cat $member/etcd/etcd/logs/current.log|tail -1 |cut -d ':' -f1|cut -c 1-10)
+      CLOCK=$(cat $member/etcd/etcd/logs/current.log|grep 'clock difference'|wc -l)
+      LASTNTP=$(cat $member/etcd/etcd/logs/current.log|grep 'clock difference'|tail -1)
+      LONGDRIFT=$(cat $member/etcd/etcd/logs/current.log|grep 'clock-drift'|wc -l)
+      LASTLONGDRIFT=$(cat $member/etcd/etcd/logs/current.log|grep 'clock-drift'|tail -1)
+      TOOK=$(cat $member/etcd/etcd/logs/current.log|grep 'apply request took too long'|wc -l)
+      HEART=$(cat $member/etcd/etcd/logs/current.log|grep 'failed to send out heartbeat on time'|wc -l)
+      SPACE=$(cat $member/etcd/etcd/logs/current.log|grep 'database space exceeded'|wc -l)
+      LEADER=$(cat $member/etcd/etcd/logs/current.log|grep 'leader changed'|wc -l)
+
+}
+
 change_to_must_gather_dir
 list_version
 list_nodes
@@ -122,3 +156,4 @@ network_cluster_scale
 etcd_object_count
 list_monitoring
 network_check_routers
+etcd_check_errors
