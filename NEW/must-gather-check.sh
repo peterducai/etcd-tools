@@ -141,6 +141,7 @@ etcd_check_errors() {
       HEART=$(cat $member/etcd/etcd/logs/current.log|grep 'failed to send out heartbeat on time'|wc -l)
       SPACE=$(cat $member/etcd/etcd/logs/current.log|grep 'database space exceeded'|wc -l)
       LEADER=$(cat $member/etcd/etcd/logs/current.log|grep 'leader changed'|wc -l)
+    done
 }
 
 change_to_must_gather_dir
