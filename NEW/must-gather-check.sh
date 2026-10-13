@@ -116,8 +116,7 @@ network_check_routers () {
 }
 
 etcd_check_errors() {
-    change_to_must_gather_dir
-        echo -e ""
+    echo -e ""
     echo -e "${GREEN}- ETCD --------------------${NONE}"
     echo -e ""
     cd namespaces/openshift-etcd/pods
@@ -153,4 +152,5 @@ network_cluster_scale
 etcd_object_count
 list_monitoring
 network_check_routers
+change_to_must_gather_dir
 etcd_check_errors
