@@ -1,7 +1,7 @@
 #!/bin/bash
 
-. library.sh
-. warnings.sh
+#. library.sh
+#. warnings.sh
 
 
 MG_PATH="$1"

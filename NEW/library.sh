@@ -1,7 +1,7 @@
 #!/bin/bash
   FROM=""
   TO=""
-OUT=""
+  OUT=""
 
   PWD=$(pwd)
   STAMP=$(date +%Y-%m-%d_%H-%M-%S)
