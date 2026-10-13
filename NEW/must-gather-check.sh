@@ -145,18 +145,17 @@ etcd_check_errors() {
 
     echo "OVERLOADED: $OVERLOAD"
     echo "OVERLOAD NETWORK: $OVERLOADN"
-    echo "OVERLOAD NETWORK remote-peer-active\":false: $RAPOVERN"
+    echo "OVERLOAD NETWORK remote-peer-active: $RAPOVERN"
     echo "OVERLOADED DISK: $OVERLOADC"
-    echo "LAST: $LAST"
-    echo "LOGEND: $LOGEND"
-    echo "CLOCK: $CLOCK"
-    echo "LASTNTP: $LASTNTP"
-    echo "LONGDRIFT: $LONGDRIFT"
+    echo "LOG END: $LOGEND"
+    echo "CLOCK DIFFERENCE: $CLOCK"
+    echo "LAST CLOCK DIFFERENCE: $LASTNTP"
+    echo "CLOCK DRIFT: $LONGDRIFT"
     echo "LASTLONGDRIFT: $LASTLONGDRIFT"
-    echo "TOOK: $TOOK"
-    echo "HEART: $HEART"
-    echo "SPACE: $SPACE"
-    echo "LEADER: $LEADER"
+    echo "TOOK TOO LONG: $TOOK"
+    echo "HEARTBEAT: $HEART"
+    echo "SPACE FULL: $SPACE"
+    echo "LEADER CHANGED: $LEADER"
 }
 
 change_to_must_gather_dir
