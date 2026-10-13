@@ -117,8 +117,7 @@ network_check_routers () {
 
 etcd_check_errors() {
     change_to_must_gather_dir
-    
-    echo -e ""
+        echo -e ""
     echo -e "${GREEN}- ETCD --------------------${NONE}"
     echo -e ""
     cd namespaces/openshift-etcd/pods
@@ -127,7 +126,6 @@ etcd_check_errors() {
         [ ! -z "$(ls |grep -v guard|grep -v installer|grep -v quorum|grep -v pruner)" ] && ETCD+=("${dirs}") || true
         #echo -e "adding $dirs"
     done
-
     # echo -e "${#ETCD[@]} etcd members"
     for member in "${ETCD[@]}"; do
       echo -e "\n${GREEN}-[$member] ---${NONE}\n"
@@ -146,11 +144,10 @@ etcd_check_errors() {
       HEART=$(cat $member/etcd/etcd/logs/current.log|grep 'failed to send out heartbeat on time'|wc -l)
       SPACE=$(cat $member/etcd/etcd/logs/current.log|grep 'database space exceeded'|wc -l)
       LEADER=$(cat $member/etcd/etcd/logs/current.log|grep 'leader changed'|wc -l)
-
 }
 
 change_to_must_gather_dir
-list_version
+#list_version
 list_nodes
 network_cluster_scale
 etcd_object_count
