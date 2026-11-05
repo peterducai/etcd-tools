@@ -158,6 +158,18 @@ etcd_check_errors() {
     done
 }
 
+list_operators () {
+    echo -e ""
+    echo -e "${GREEN}- Installed operators --------------------${NONE}"
+    echo -e ""
+    cd $FULL_PATH/cluster-scoped-resources/operators.coreos.com/operators/
+    for filename in *.yaml; do
+        [ -e "$filename" ] || continue
+        echo -e "$filename"
+    done
+    echo ""
+}
+
 change_to_must_gather_dir
 list_version
 list_nodes
@@ -166,3 +178,4 @@ etcd_object_count
 list_monitoring
 network_check_routers
 etcd_check_errors
+list_operators
