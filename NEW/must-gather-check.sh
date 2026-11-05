@@ -199,6 +199,10 @@ host_logs () {
     echo ""
 }
 
+
+POD_FILES_NOT_FOUND=()
+PODS_FAILING=()
+PODS_PENDING=()
 list_pods () {
     echo -e ""
     echo -e "${GREEN}- Pods --------------------${NONE}"
@@ -206,20 +210,20 @@ list_pods () {
     cd $FULL_PATH/namespaces/
     for ns in $(ls); do
         [ -e "$ns" ] || continue
-        
         if [ ! -f $ns/core/pods.yaml ]; then
-           echo -e "$ns  pod definition NOT FOUND"
+           POD_FILES_NOT_FOUND+=("$ns")
         else
-            echo -e "${GREEN}[$ns]${NONE}"
             cd $ns/core/
             #echo -e "Pods in $ns:"
-            cat pods.yaml |yq -p yaml -o json |jq -r '.items[] | "\(.metadata.name) \(.status.phase)"' |grep -e "Failed" -e "Pending"
+            pending=$(cat pods.yaml |yq -p yaml -o json |jq -r '.items[] | "\(.metadata.name) \(.status.phase)"' |grep -e "Failed" -e "Pending")
+            if [[ -n $pending ]]; then PODS_PENDING+=("$pending"); fi
             cd ../..
         fi  
-        #cd ../..
-        echo ""
     done
+    printf '%s\n' "${PODS_PENDING[@]}"
     echo ""
+    echo -e "Namespaces with missing pod definition files:\n"
+    printf '%s\n' "${POD_FILES_NOT_FOUND[@]}"
 }
 
 change_to_must_gather_dir
