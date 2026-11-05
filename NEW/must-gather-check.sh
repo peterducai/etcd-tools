@@ -190,10 +190,16 @@ host_logs () {
     cd $FULL_PATH/host_service_logs/masters/
     for filename in *.log; do
         [ -e "$filename" ] || continue
-        echo -e "$filename errors: $(cat $filename |grep -i error|wc -l)"
-        echo -e "$filename warnings: $(cat $filename |grep -i warn|wc -l)"
-        echo -e "$filename failures: $(cat $filename |grep -i fail|wc -l)"
-        echo -e "$filename OOM: $(cat $filename |grep -i oom|wc -l)"
+        echo -e "$filename"
+        echo -e "--------------------"
+        errors=$(cat $filename |grep -i error|wc -l)
+        warnings=$(cat $filename |grep -i warn|wc -l)
+        failures=$(cat $filename |grep -i fail|wc -l)
+        oom=$(cat $filename |grep -i oom|wc -l)
+        if [[ $errors -gt 0 ]]; then echo "errors: $errors"; fi
+        if [[ $warnings -gt 0 ]]; then echo "warnings: $warnings"; fi
+        if [[ $failures -gt 0 ]]; then echo "failures: $failures"; fi
+        if [[ $oom -gt 0 ]]; then echo "OOM: $oom"; fi
         echo -e ""
     done
     echo ""
@@ -205,7 +211,7 @@ PODS_FAILING=()
 PODS_PENDING=()
 list_pods () {
     echo -e ""
-    echo -e "${GREEN}- Pods --------------------${NONE}"
+    
     echo -e ""
     cd $FULL_PATH/namespaces/
     for ns in $(ls); do
@@ -215,12 +221,18 @@ list_pods () {
         else
             cd $ns/core/
             #echo -e "Pods in $ns:"
-            pending=$(cat pods.yaml |yq -p yaml -o json |jq -r '.items[] | "\(.metadata.name) \(.status.phase)"' |grep -e "Failed" -e "Pending")
+            pending=$(cat pods.yaml |yq -p yaml -o json |jq -r '.items[] | "\(.metadata.name) \(.status.phase)"' |grep Pending)
+            failed=$(cat pods.yaml |yq -p yaml -o json |jq -r '.items[] | "\(.metadata.name) \(.status.phase)"' |grep Failed)
             if [[ -n $pending ]]; then PODS_PENDING+=("$pending"); fi
+            if [[ -n $failed ]]; then PODS_FAILING+=("$failed"); fi
             cd ../..
         fi  
     done
+    echo -e "${GREEN}- Pods PENDING:${NONE}"
     printf '%s\n' "${PODS_PENDING[@]}"
+    echo ""
+    echo -e "${GREEN}- Pods FAILED:${NONE}"
+    printf '%s\n' "${PODS_FAILING[@]}"
     echo ""
     echo -e "Namespaces with missing pod definition files:\n"
     printf '%s\n' "${POD_FILES_NOT_FOUND[@]}"
