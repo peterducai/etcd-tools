@@ -23,6 +23,7 @@ change_to_must_gather_dir () {
 }
 
 list_version () {
+    echo -e ""
     echo -e "${GREEN}- Cluster Version ----------${NONE}"
     cat $FULL_PATH/version|tail -1
     echo ""
@@ -129,7 +130,6 @@ etcd_check_errors() {
       # echo -e ""
       OVERLOAD=$(cat $member/etcd/etcd/logs/current.log|grep 'overload'|wc -l)
       OVERLOADN=$(cat $member/etcd/etcd/logs/current.log|grep 'overload'|grep network|wc -l)
-      RAPOVERN=$(cat $member/etcd/etcd/logs/current.log|grep 'overload'|grep network |tail -n 1 |grep "remote-peer-active\":false")
       OVERLOADC=$(cat $member/etcd/etcd/logs/current.log|grep 'overload'|grep disk|wc -l)
       LAST=$(cat $member/etcd/etcd/logs/current.log|grep 'overload'|tail -1 |cut -d ':' -f1|cut -c 1-10)
       LOGEND=$(cat $member/etcd/etcd/logs/current.log|tail -1 |cut -d ':' -f1|cut -c 1-10)
@@ -144,9 +144,7 @@ etcd_check_errors() {
 
       echo "OVERLOADED: $OVERLOAD"
       echo "OVERLOAD NETWORK: $OVERLOADN"
-      echo "OVERLOAD NETWORK remote-peer-active: $RAPOVERN"
       echo "OVERLOADED DISK: $OVERLOADC"
-      echo "LOG END: $LOGEND"
       echo "CLOCK DIFFERENCE: $CLOCK"
       echo "LAST CLOCK DIFFERENCE: $LASTNTP"
       echo "CLOCK DRIFT: $LONGDRIFT"
@@ -155,6 +153,7 @@ etcd_check_errors() {
       echo "HEARTBEAT: $HEART"
       echo "SPACE FULL: $SPACE"
       echo "LEADER CHANGED: $LEADER"
+      echo "        LOG END: $LOGEND"
     done
 }
 
@@ -170,6 +169,59 @@ list_operators () {
     echo ""
 }
 
+
+list_events () {
+    echo -e ""
+    echo -e "${GREEN}- Events --------------------${NONE}"
+    echo -e ""
+    # Events are listed in NS/core/events.yaml for each NS 
+    # cd $FULL_PATH/cluster-scoped-resources/core/events/
+    # for filename in *.yaml; do
+    #     [ -e "$filename" ] || continue
+    #     echo -e "$filename"
+    # done
+    echo ""
+}
+
+host_logs () {
+    echo -e ""
+    echo -e "${GREEN}- Host Logs --------------------${NONE}"
+    echo -e ""
+    cd $FULL_PATH/host_service_logs/masters/
+    for filename in *.log; do
+        [ -e "$filename" ] || continue
+        echo -e "$filename errors: $(cat $filename |grep -i error|wc -l)"
+        echo -e "$filename warnings: $(cat $filename |grep -i warn|wc -l)"
+        echo -e "$filename failures: $(cat $filename |grep -i fail|wc -l)"
+        echo -e "$filename OOM: $(cat $filename |grep -i oom|wc -l)"
+        echo -e ""
+    done
+    echo ""
+}
+
+list_pods () {
+    echo -e ""
+    echo -e "${GREEN}- Pods --------------------${NONE}"
+    echo -e ""
+    cd $FULL_PATH/namespaces/
+    for ns in $(ls); do
+        [ -e "$ns" ] || continue
+        
+        if [ ! -f $ns/core/pods.yaml ]; then
+           echo -e "$ns  pod definition NOT FOUND"
+        else
+            echo -e "${GREEN}[$ns]${NONE}"
+            cd $ns/core/
+            #echo -e "Pods in $ns:"
+            cat pods.yaml |yq -p yaml -o json |jq -r '.items[] | "\(.metadata.name) \(.status.phase)"' |grep -e "Failed" -e "Pending"
+            cd ../..
+        fi  
+        #cd ../..
+        echo ""
+    done
+    echo ""
+}
+
 change_to_must_gather_dir
 list_version
 list_nodes
@@ -179,3 +231,5 @@ list_monitoring
 network_check_routers
 etcd_check_errors
 list_operators
+host_logs
+list_pods
